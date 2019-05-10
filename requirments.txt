@@ -1,0 +1,11 @@
+tqdm
+torch
+torchvision
+numpy
+opencv-python==3.4.5.20
+pillow
+visdom
+polygon3
+pretrainedmodels
+scipy
+Shapely

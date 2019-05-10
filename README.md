@@ -1,8 +1,36 @@
 # end2end_OCR
 Course homework in YSDA
 
-## Repositories 
-- FOTS - 
+FOTS-dev branch based on this repo (https://github.com/novioleo/FOTS). Please follow updates of the one. End2end training does not complete yet.
+
+## Chekpoints
+
+1) Trained on ICDAR 2015, bad result 
+
+2) Trained only on SynthText
+
+
+## How use
+
+Install all the python dependencies using pip:
+```
+pip install -r requirements.txt
+```
+
+## Train
+
+Try:
+```
+python train.py --config="configs/config.json"
+```
+
+## Test
+
+If you want to evaluate the detection performance, simply run
+```
+python eval.py 
+```
+
 
 ## Datasets 
 - [SynthText](http://www.robots.ox.ac.uk/~vgg/data/scenetext/)
