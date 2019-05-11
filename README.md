@@ -5,6 +5,8 @@ FOTS-dev branch based on this repo (https://github.com/novioleo/FOTS). Please fo
 
 ## Chekpoints
 
+Download [here](https://drive.google.com/drive/folders/1tp0154QhXeByc8bZhJw_Z-bcEWYGyzZg?usp=sharing).
+
 1) Trained on ICDAR 2015, bad result 
 
 2) Trained only on SynthText
