@@ -10,11 +10,11 @@
         "__data_dir": "/data/ivpaharitonov/",
         "_data_dir": "/Users/ivan_kharitonov/Google Drive/End2end_text_recognition_YSDA/datasets/SynthText/SynthText/",
         "batch_size": 25,
-        "shuffle": true,
+        "shuffle": false,
         "workers": 8
     },
     "validation": {
-        "validation_split": 0.1,
+        "validation_split": 0.8,
         "shuffle": true
     },
 
@@ -27,13 +27,13 @@
     "optimizer_type": "Adam",
     "optimizer": {
         "lr": 0.0001,
-        "weight_decay": 1e-5
+        "weight_decay": 1e-3
     },
     "loss": "FOTSLoss",
     "metrics": ["detection_metric"],
     "trainer": {
         "epochs": 100000,
-        "save_dir": "../saved/",
+        "save_dir": "../saved/only_recog/",
         "save_freq": 1,
         "verbosity": 2,
         "monitor": "loss",
@@ -41,7 +41,7 @@
     },
     "arch": "FOTSModel",
     "need_grad_backbone": false,
-    "need_grad_detector": true,
+    "need_grad_detector": false,
     "model": {
         "mode": "united",
         "_mode": "detection",
