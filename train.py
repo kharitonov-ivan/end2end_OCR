@@ -27,6 +27,13 @@ def main(config, resume):
         data_loader = OCRDataLoaderFactory(config, ICDARDataset2015)
         train = data_loader.train()
         val = data_loader.val()
+    elif config['data_loader']['dataset'] == 'icdar2017':
+        # ICDAR 2015
+        data_root = pathlib.Path(config['data_loader']['data_dir'])
+        ICDARDataset2017 = ICDAR(data_root, year='2017')
+        data_loader = OCRDataLoaderFactory(config, ICDARDataset2017)
+        train = data_loader.train()
+        val = data_loader.val()
     elif config['data_loader']['dataset'] == 'synth800k':
         data_loader = SynthTextDataLoaderFactory(config)
         train = data_loader.train()

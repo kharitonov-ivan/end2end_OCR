@@ -63,6 +63,19 @@ class ICDAR(Dataset):
             },
             'voc_generic': 'GenericVocabulary.txt'
         },
+        '2017': {
+            'training': {
+                'images': ['ch8_training_images_1',
+                           'ch8_training_images_2',
+                           'ch8_training_images_3',
+                           'ch8_training_images_4',
+                           'ch8_training_images_5',
+                           'ch8_training_images_6',
+                           'ch8_training_images_7',
+                           'ch8_training_images_8'],
+                'gt': 'ch8_training_localization_transcription_gt_v2',
+            },
+        },
 
     }
 
@@ -71,11 +84,53 @@ class ICDAR(Dataset):
 
         if year == '2013' and type == 'test':
             logger.warning('ICDAR 2013 does not contain test ground truth. Fall back to training instead.')
-
+        self.year = year
         self.structure = ICDAR.structure[year]
-        self.imagesRoot = data_root / self.structure[type]['images']
-        self.gtRoot = data_root / self.structure[type]['gt']
-        self.images, self.bboxs, self.transcripts = self.__loadGT()
+
+
+
+        if self.year == '2017':
+            self.imagesRoot = [data_root / dir for dir in self.structure[type]['images']]
+            self.gtRoot = data_root / self.structure[type]['gt']
+
+            self.images, self.bboxs, self.transcripts = self.__loadGT_2017()
+        else:
+            self.imagesRoot = data_root / self.structure[type]['images']
+            self.gtRoot = data_root / self.structure[type]['gt']
+            self.images, self.bboxs, self.transcripts = self.__loadGT()
+
+    def __loadGT_2017(self):
+
+        all_bboxs = []
+        all_texts = []
+        all_images = []
+        print(self.imagesRoot)
+        image_paths = []
+        for dir in self.imagesRoot:
+            image_paths.extend(list(dir.glob('*.jpg')))
+
+        print("LOAD GT")
+        print(image_paths)
+        for image in tqdm(image_paths):
+
+            all_images.append(image)
+            gt = self.gtRoot / image.with_name('gt_{}'.format(image.stem)).with_suffix('.txt').name
+            with gt.open(mode='r') as f:
+                bboxes = []
+                texts = []
+                for line in f:
+                    text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip().split(',')
+                    if text[8] == 'Latin':
+                        x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
+                        bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                        transcript = text[9]
+                        print(transcript)
+                        bboxes.append(bbox)
+                        texts.append(transcript)
+                bboxes = np.array(bboxes)
+                all_bboxs.append(bboxes)
+                all_texts.append(texts)
+        return all_images, all_bboxs, all_texts
 
     def __loadGT(self):
         all_bboxs = []
