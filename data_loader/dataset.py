@@ -225,7 +225,7 @@ class SynthTextDataset(Dataset):
 
         print("LEN BEFORE CUT", len(self.imageNames))
 
-        with open('data.pickle', 'rb') as f:
+        with open('data_loader/data.pickle', 'rb') as f:
             data_new = pickle.load(f)
         self.bad_indices_from_history = data_new['bad_indices']
         self.imageNames = np.delete(self.imageNames, self.bad_indices_from_history)
@@ -233,6 +233,9 @@ class SynthTextDataset(Dataset):
         self.transcripts = np.delete(self.transcripts, self.bad_indices_from_history)
         print("LEN AFTER CUT", len(self.imageNames))
         self.bad_indices = []
+
+
+
 
 
     def __getitem__(self, index):
