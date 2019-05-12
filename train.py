@@ -42,7 +42,6 @@ def main(config, resume):
     model = eval(config['arch'])(config)
     model.summary()
 
-
     loss = eval(config['loss'])(config['model'])
     metrics = [eval(metric) for metric in config['metrics']]
 
@@ -85,6 +84,11 @@ if __name__ == '__main__':
         if args.config is not None:
             logger.warning('Warning: --config overridden by --resume')
         config = torch.load(args.resume)['config']
+        config_from_file = json.load(open(args.config))
+        config['data_loader'] = config_from_file['data_loader']
+        config['trainer']=config_from_file['trainer']
+        config['validation'] = config_from_file['validation']
+
     elif args.config is not None:
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
