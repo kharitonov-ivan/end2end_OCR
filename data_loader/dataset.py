@@ -235,6 +235,12 @@ class SynthTextDataset(Dataset):
         self.bad_indices = []
 
 
+        N_SAMPLES = 1000
+
+        self.imageNames =  self.imageNames[:N_SAMPLES]
+        self.wordBBoxes = self.wordBBoxes[:N_SAMPLES]
+        self.transcripts = self.transcripts[:N_SAMPLES]
+
 
 
 
