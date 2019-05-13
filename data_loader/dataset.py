@@ -104,15 +104,14 @@ class ICDAR(Dataset):
         all_bboxs = []
         all_texts = []
         all_images = []
+        # print(self.imagesRoot)
         image_paths = []
         for dir in self.imagesRoot:
             image_paths.extend(list(dir.glob('*.jpg')))
 
-        print("GT loading ...")
-
+        print("LOAD GT")
+        # print(image_paths)
         for image in tqdm(image_paths):
-
-
             gt = self.gtRoot / image.with_name('gt_{}'.format(image.stem)).with_suffix('.txt').name
             with gt.open(mode='r') as f:
                 bboxes = []
@@ -122,16 +121,20 @@ class ICDAR(Dataset):
                     if text[8] == 'Latin':
                         x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
                         bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-
                         transcript = text[9]
+                        # print(transcript)
                         bboxes.append(bbox)
                         texts.append(transcript)
-                    if len(texts) > 0:
-                        all_images.append(image) # Add image only if we find valid bbox and text
+                if len(texts) > 0:
+                    all_images.append(image)
+                    bboxes = np.array(bboxes)
+                    all_bboxs.append(bboxes)
+                    all_texts.append(texts)
 
-                bboxes = np.array(bboxes)
-                all_bboxs.append(bboxes)
-                all_texts.append(texts)
+        N = len(all_bboxs)#100
+        all_bboxs = all_bboxs[:N]
+        all_texts = all_texts[:N]
+        all_images = all_images[:N]
         return all_images, all_bboxs, all_texts
 
     def __loadGT(self):

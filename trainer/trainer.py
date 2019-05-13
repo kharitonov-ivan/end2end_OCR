@@ -19,9 +19,10 @@ class Trainer(BaseTrainer):
     def __init__(self, model, loss, metrics,
                  finetune, resume, config,
                  data_loader, toolbox: Toolbox, valid_data_loader=None, train_logger=None,
-                 keys=custom_1):
-        super(Trainer, self).__init__(model, loss, metrics, finetune, resume, config, train_logger)
+                 keys=custom_1, config_from_file=None):
+        super(Trainer, self).__init__(model, loss, metrics, finetune, resume, config, train_logger, config_from_file)
         self.config = config
+        self.config_from_file = config_from_file
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
@@ -65,10 +66,10 @@ class Trainer(BaseTrainer):
         dataset_size = len(self.data_loader)
 
         if epoch % 2 ==0:
-            for param in self.detector.parameters():
+            for param in self.model.detector.parameters():
                 param.requires_grad = True
             else:
-                for param in self.detector.parameters():
+                for param in self.model.detector.parameters():
                     param.requires_grad = False
 
         for batch_idx, gt in enumerate(self.data_loader):

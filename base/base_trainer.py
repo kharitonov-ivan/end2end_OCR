@@ -11,7 +11,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, metrics,finetune,resume, config, train_logger=None):
+    def __init__(self, model, loss, metrics,finetune,resume, config, train_logger=None, config_from_file = None):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
         self.model = model
@@ -21,6 +21,7 @@ class BaseTrainer:
         self.epochs = config['trainer']['epochs']
         self.save_freq = config['trainer']['save_freq']
         self.verbosity = config['trainer']['verbosity']
+        self.config_from_file = config_from_file
 
         if torch.cuda.is_available():
             if config['cuda']:
@@ -189,7 +190,12 @@ class BaseTrainer:
         """
         self.logger.info("Loading checkpoint: {} ...".format(checkpoint_path))
         checkpoint = torch.load(checkpoint_path)
-        self.model.load_state_dict(checkpoint['state_dict'])
+        print(self.config_from_file)
+        weiths_list =  self.config_from_file['model']['get_weights_for']
+        if weiths_list is not None:
+            self.model.load_state_dict(checkpoint['state_dict'], weiths_list)
+        else:
+            self.model.load_state_dict(checkpoint['state_dict'])
         # self.optimizer.load_state_dict(checkpoint['optimizer'])
         # if self.with_cuda:
         #     for state in self.optimizer.state.values():

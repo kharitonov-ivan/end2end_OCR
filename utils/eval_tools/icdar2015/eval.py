@@ -455,9 +455,9 @@ def transform_output(output:tuple, fileNameRegExp='', allEntries=False, gt=True)
     transcripts_dict = {}
     conf_dict = {}
 
-    print('BOXES', boxes, '\n',
-          'TRANSCRIPTS', transcripts, '\n',
-          'FILENAMES', fns)
+    # print('BOXES', boxes, '\n',
+    #       'TRANSCRIPTS', transcripts, '\n',
+    #       'FILENAMES', fns)
     for i, fn in enumerate(fns):
         addFile = True
         keyName = fn

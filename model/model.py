@@ -90,8 +90,10 @@ class FOTSModel():
         return {f'{m_ind}': getattr(self, m_model).state_dict()
                 for m_ind, m_model in enumerate(self.available_models())}
 
-    def load_state_dict(self, sd):
-        for m_ind, m_model in enumerate(self.available_models()):
+    def load_state_dict(self, sd, models = None):
+        if models == None:
+            models = self.available_models()
+        for m_ind, m_model in enumerate(models):
             getattr(self, m_model).load_state_dict(sd[f'{m_ind}'])
 
     @property

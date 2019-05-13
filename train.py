@@ -17,7 +17,7 @@ from utils.bbox import Toolbox
 logging.basicConfig(level=logging.DEBUG, format='')
 
 
-def main(config, resume):
+def main(config, resume, config_from_file):
     train_logger = Logger()
 
     if config['data_loader']['dataset'] == 'icdar2015':
@@ -46,7 +46,7 @@ def main(config, resume):
         val = data_loader.val()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(i) for i in config['gpus']])
-    model = eval(config['arch'])(config)
+    model = eval(config['arch'])(config_from_file)
     model.summary()
 
     loss = eval(config['loss'])(config['model'])
@@ -62,7 +62,8 @@ def main(config, resume):
                       valid_data_loader=val,
                       train_logger=train_logger,
                       toolbox = Toolbox,
-                      keys=getattr(common_str,config['model']['keys']))
+                      keys=getattr(common_str,config['model']['keys']),
+                      config_from_file = config_from_file)
 
     trainer.train()
 
@@ -99,7 +100,9 @@ if __name__ == '__main__':
     elif args.config is not None:
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
+        config_from_file = config
         #assert not os.path.exists(path), "Path {} already exists!".format(path)
     assert config is not None
 
-    main(config, args.resume)
+
+    main(config, args.resume, config_from_file)
