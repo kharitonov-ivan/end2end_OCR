@@ -1,7 +1,7 @@
 # end2end_OCR
 Course homework in YSDA
 
-FOTS-dev branch based on this repo (https://github.com/novioleo/FOTS). Please follow updates of the one. End2end training does not complete yet.
+FOTS-dev branch based on this repo (https://github.com/novioleo/FOTS). Please follow updates of the one. End2end training does not complete yet. [His readme](https://translate.google.com/translate?depth=1&hl=en&rurl=translate.google.com&sl=zh-CN&sp=nmt4&tl=en&u=https://github.com/novioleo/FOTS)
 
 ## Chekpoints
 
