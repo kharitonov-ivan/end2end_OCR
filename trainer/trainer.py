@@ -63,6 +63,14 @@ class Trainer(BaseTrainer):
         total_rec_loss = 0
         total_metrics = np.zeros(3)  # precious, recall, hmean
         dataset_size = len(self.data_loader)
+
+        if epoch % 2 ==0:
+            for param in self.detector.parameters():
+                param.requires_grad = True
+            else:
+                for param in self.detector.parameters():
+                    param.requires_grad = False
+
         for batch_idx, gt in enumerate(self.data_loader):
             try:
                 image_paths, img, score_map, geo_map, training_mask, transcripts, boxes, mapping = gt

@@ -67,7 +67,7 @@ def main(args: argparse.Namespace):
     with_image = True if output_img_dir else False
     with_gpu = True if torch.cuda.is_available() and not args.no_gpu else False
 
-    model = load_model(model_path, with_gpu)
+    model = load_model(model_path, with_gpu = False)
     if annotation_dir is not None:
 
         true_pos, true_neg, false_pos, false_neg = [0] * 4

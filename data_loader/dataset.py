@@ -104,16 +104,15 @@ class ICDAR(Dataset):
         all_bboxs = []
         all_texts = []
         all_images = []
-        print(self.imagesRoot)
         image_paths = []
         for dir in self.imagesRoot:
             image_paths.extend(list(dir.glob('*.jpg')))
 
-        print("LOAD GT")
-        print(image_paths)
+        print("GT loading ...")
+
         for image in tqdm(image_paths):
 
-            all_images.append(image)
+
             gt = self.gtRoot / image.with_name('gt_{}'.format(image.stem)).with_suffix('.txt').name
             with gt.open(mode='r') as f:
                 bboxes = []
@@ -123,10 +122,13 @@ class ICDAR(Dataset):
                     if text[8] == 'Latin':
                         x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
                         bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+
                         transcript = text[9]
-                        print(transcript)
                         bboxes.append(bbox)
                         texts.append(transcript)
+                    if len(texts) > 0:
+                        all_images.append(image) # Add image only if we find valid bbox and text
+
                 bboxes = np.array(bboxes)
                 all_bboxs.append(bboxes)
                 all_texts.append(texts)
@@ -198,7 +200,7 @@ class ICDAR(Dataset):
 
             # print rd_scale
             # random crop a area from image
-            if np.random.rand() < 0.5:#background_ratio:
+            if np.random.rand() < background_ratio:
                 # crop background
                 im, text_polys, text_tags, selected_poly = \
                     crop_area(im, text_polys, text_tags, crop_background=True)
