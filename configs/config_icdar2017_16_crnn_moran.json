@@ -36,7 +36,7 @@
     "metrics": ["fots_metric"],
     "trainer": {
         "epochs": 100000,
-        "save_dir": "../saved_icdar_2017_2015/2017_from_70_epoch_after/",
+        "save_dir": "../saved_icdar_2017_2015/MORAN/",
         "save_freq": 10,
         "verbosity": 2,
         "monitor": "loss",
