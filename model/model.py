@@ -18,6 +18,7 @@ class FOTSModel():
 
     def __init__(self, config):
         self.mode = config['model']['mode']
+        self.config = config
         assert self.mode.lower() in ['recognition', 'detection', 'united'], f'模式[{self.mode}]不支持'
         keys = getattr(common_str, config['model']['keys'])
         backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
@@ -45,11 +46,11 @@ class FOTSModel():
         self.buffers = OrderedDict
 
 
-        for param in self.detector.parameters():
-            try:
-                param.requires_grad =  config['need_grad_detector']
-            except:
-                param.requires_grad = True
+        # for param in self.detector.parameters():
+        #     try:
+        #         param.requires_grad = config['need_grad_detector']
+        #     except:
+        #         param.requires_grad = True
 
     def available_models(self):
         if self.mode == 'detection':
@@ -160,7 +161,9 @@ class FOTSModel():
             feature_map_det = self.conv_det.forward(image)
             score_map, geo_map = self.detector(feature_map_det)
             if self.training:
-                pred_boxes, pred_mapping = boxes, mapping
+                # pred_boxes, pred_mapping = boxes, mapping
+                pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+
             else:
                 pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
             if len(pred_boxes) > 0:

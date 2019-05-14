@@ -57,6 +57,7 @@ class Trainer(BaseTrainer):
 
             The metrics in log must have the key 'metrics'.
         """
+        torch.cuda.empty_cache()
         self.model.train()
 
         total_loss = 0
@@ -65,12 +66,20 @@ class Trainer(BaseTrainer):
         total_metrics = np.zeros(3)  # precious, recall, hmean
         dataset_size = len(self.data_loader)
 
-        if epoch % 2 ==0:
-            for param in self.model.detector.parameters():
-                param.requires_grad = True
-            else:
-                for param in self.model.detector.parameters():
-                    param.requires_grad = False
+        print('LR =', self.lr_scheduler.get_lr()[0])
+        # for param in self.model.recognizer.parameters():
+        #     param.requires_grad = False
+
+
+
+        # if epoch % 2 == 0:
+        #     print("detector freezed")
+        #     for param in self.model.detector.parameters():
+        #         param.requires_grad = False
+        # else:
+        #     print("detector unfreezed")
+        #     for param in self.model.detector.parameters():
+        #         param.requires_grad = True
 
         for batch_idx, gt in enumerate(self.data_loader):
             try:
@@ -83,9 +92,16 @@ class Trainer(BaseTrainer):
                                                                                                                  mapping,
                                                                                                                  transcripts)
                 if indices is not None:
-                    indice_transcripts = transcripts[indices]
-                    pred_boxes = pred_boxes[indices]
-                    pred_mapping = pred_mapping[indices]
+                    # print(indices)
+                    # print(transcripts)
+                    try:
+                        indice_transcripts = transcripts[indices]
+                        pred_boxes = pred_boxes[indices]
+                        pred_mapping = pred_mapping[indices]
+                    except:
+                        continue
+
+
                     labels, label_lengths = self.labelConverter.encode(indice_transcripts.tolist())
                     recog = (labels, label_lengths)
                 else:
@@ -146,9 +162,9 @@ class Trainer(BaseTrainer):
             'hmean': total_metrics[2] / dataset_size
         }
 
-        if self.valid:
-            val_log = self._valid_epoch()
-            log = {**log, **val_log}
+        # if self.valid:
+        #     val_log = self._valid_epoch()
+        #     log = {**log, **val_log}
 
         return log
 
