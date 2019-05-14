@@ -7,6 +7,7 @@ from utils.bbox import Toolbox
 from .modules import shared_conv
 from .modules.roi_rotate import ROIRotate
 from .modules.crnn import CRNN
+from .modules.MORAN.morn import MORN
 import pretrainedmodels as pm
 import torch.optim as optim
 import numpy as np
@@ -14,10 +15,12 @@ import utils.common_str as common_str
 from collections import OrderedDict
 
 
+
 class FOTSModel():
 
     def __init__(self, config):
         self.mode = config['model']['mode']
+        self.config = config
         assert self.mode.lower() in ['recognition', 'detection', 'united'], f'模式[{self.mode}]不支持'
         keys = getattr(common_str, config['model']['keys'])
         backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
@@ -30,10 +33,13 @@ class FOTSModel():
             for g in grad_input:
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
 
+        if self.config['rectifier'] == True:
+            self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
+
         if not self.mode == 'detection':
             self.conv_rec = shared_conv.SharedConv(backbone_network, config)
-            nclass = len(keys) + 1
-            self.recognizer = Recognizer(nclass, config)
+            self.nclass = len(keys) + 1
+            self.recognizer = Recognizer(self.nclass, config)
             self.recognizer.register_backward_hook(backward_hook)
 
         if not self.mode == 'recognition':
@@ -43,6 +49,13 @@ class FOTSModel():
 
         self.roirotate = ROIRotate(config['model']['crnn']['img_h'])
         self.buffers = OrderedDict
+
+
+        # for param in self.detector.parameters():
+        #     try:
+        #         param.requires_grad = config['need_grad_detector']
+        #     except:
+        #         param.requires_grad = True
 
     def available_models(self):
         if self.mode == 'detection':
@@ -54,7 +67,7 @@ class FOTSModel():
 
     def parallelize(self):
         for m_model in self.available_models():
-            setattr(self, m_model, torch.nn.parallel.DataParallel(getattr(self, m_model)))
+            setattr(self, m_model, torch.nn.DataParallel(getattr(self, m_model)))
 
     def to(self, device):
         for m_model in self.available_models():
@@ -83,8 +96,10 @@ class FOTSModel():
         return {f'{m_ind}': getattr(self, m_model).state_dict()
                 for m_ind, m_model in enumerate(self.available_models())}
 
-    def load_state_dict(self, sd):
-        for m_ind, m_model in enumerate(self.available_models()):
+    def load_state_dict(self, sd, models = None):
+        if models == None:
+            models = self.available_models()
+        for m_ind, m_model in enumerate(models):
             getattr(self, m_model).load_state_dict(sd[f'{m_ind}'])
 
     @property
@@ -127,7 +142,8 @@ class FOTSModel():
                 if len(detected_boxes) > 0:
                     _pred_mapping.append(np.array([i] * num_detected_boxes))
                     _pred_boxes.append(detected_boxes)
-            return _pred_boxes, _pred_mapping
+            return np.concatenate(_pred_boxes) if len(_pred_boxes) > 0 else [], \
+                   np.concatenate(_pred_mapping) if len(_pred_mapping) > 0 else []
 
         score_map, geo_map, (preds, lengths), pred_boxes, pred_mapping, indices = \
             None, None, (None, torch.Tensor(0)), boxes, mapping, mapping
@@ -144,26 +160,29 @@ class FOTSModel():
             pred_boxes, pred_mapping = boxes, mapping
             feature_map_rec = self.conv_rec.forward(image)
             rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
-            preds = self.recognizer(rois, lengths, text).permute(1, 0, 2)
+            preds = self.recognizer(rois, lengths).permute(1, 0, 2)
             lengths = torch.tensor(lengths).to(device)
         elif self.mode == 'united':
             feature_map_det = self.conv_det.forward(image)
             score_map, geo_map = self.detector(feature_map_det)
             if self.training:
-                pred_boxes, pred_mapping = boxes, mapping
+                # pred_boxes, pred_mapping = boxes, mapping
+                pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+
             else:
                 pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
             if len(pred_boxes) > 0:
                 feature_map_rec = self.conv_rec.forward(image)
                 rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
 
-                # if confif == 'moran':
-                #  rois, demo = self.MORN(rois, test, debug=debug)
+                # Raw rois.shape (batch size, 32, 16, width)
+                if self.config['rectifier'] == True:
+                    rois = self.MORN(rois, test=False, debug=False)
 
                 preds = self.recognizer(rois, lengths).permute(1, 0, 2)
                 lengths = torch.tensor(lengths).to(device)
             else:
-                preds = torch.empty(1, image.shape[0], self.nclass, dtype=torch.float)
+                preds = torch.empty(1,image.shape[0],self.nclass, dtype=torch.float)
                 lengths = torch.ones(image.shape[0])
 
 

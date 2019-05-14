@@ -63,6 +63,19 @@ class ICDAR(Dataset):
             },
             'voc_generic': 'GenericVocabulary.txt'
         },
+        '2017': {
+            'training': {
+                'images': ['ch8_training_images_1',
+                           'ch8_training_images_2',
+                           'ch8_training_images_3',
+                           'ch8_training_images_4',
+                           'ch8_training_images_5',
+                           'ch8_training_images_6',
+                           'ch8_training_images_7',
+                           'ch8_training_images_8'],
+                'gt': 'ch8_training_localization_transcription_gt_v2',
+            },
+        },
 
     }
 
@@ -71,11 +84,82 @@ class ICDAR(Dataset):
 
         if year == '2013' and type == 'test':
             logger.warning('ICDAR 2013 does not contain test ground truth. Fall back to training instead.')
-
+        self.year = year
         self.structure = ICDAR.structure[year]
-        self.imagesRoot = data_root / self.structure[type]['images']
-        self.gtRoot = data_root / self.structure[type]['gt']
-        self.images, self.bboxs, self.transcripts = self.__loadGT()
+
+
+
+        if self.year == '2017':
+            self.imagesRoot = [data_root / dir for dir in self.structure[type]['images']]
+            self.gtRoot = data_root / self.structure[type]['gt']
+
+            self.images, self.bboxs, self.transcripts = self.__loadGT_2017()
+        else:
+            self.imagesRoot = data_root / self.structure[type]['images']
+            self.gtRoot = data_root / self.structure[type]['gt']
+            self.images, self.bboxs, self.transcripts = self.__loadGT()
+
+    def __loadGT_2017(self):
+
+        all_bboxs = []
+        all_texts = []
+        all_images = []
+        # print(self.imagesRoot)
+        image_paths = []
+        for dir in self.imagesRoot:
+            image_paths.extend(list(dir.glob('*.jpg')))
+        import time, re
+        print("LOAD GT")
+        # print(image_paths)
+        for image in tqdm(image_paths):
+            gt = self.gtRoot / image.with_name('gt_{}'.format(image.stem)).with_suffix('.txt').name
+            with gt.open(mode='r') as f:
+                bboxes = []
+                texts = []
+
+
+                # for line in f:
+                #     text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip().split(',')
+                #     # if text[8] == 'Latin':
+                #     x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
+                #     bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                #     transcript = text[9]
+                #     bboxes.append(bbox)
+                #     texts.append(transcript)
+                #
+                #
+                # all_images.append(image)
+                # bboxes = np.array(bboxes)
+                # all_bboxs.append(bboxes)
+                # all_texts.append(texts)
+
+
+                for line in f:
+                    text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip().split(',')
+                    if text[8] == 'Latin':
+                        x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
+                        bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                        transcript = text[9]
+
+                        if re.match("^[A-Za-z0-9_-]*$", transcript):
+                            # print(transcript)
+                            # time.sleep(0.01)
+                            bboxes.append(bbox)
+                            texts.append(transcript)
+                if len(texts) > 0:
+                    all_images.append(image)
+                    bboxes = np.array(bboxes)
+                    all_bboxs.append(bboxes)
+                    all_texts.append(texts)
+
+        N = len(all_bboxs)#100
+        all_bboxs = all_bboxs[:N]
+        all_texts = all_texts[:N]
+        all_images = all_images[:N]
+        print(all_texts)
+
+
+        return all_images, all_bboxs, all_texts
 
     def __loadGT(self):
         all_bboxs = []
@@ -143,9 +227,10 @@ class ICDAR(Dataset):
 
             # print rd_scale
             # random crop a area from image
-            if np.random.rand() < background_ratio:
+            if np.random.rand() < 0.15:#background_ratio:
                 # crop background
-                im, text_polys, text_tags, selected_poly = crop_area(im, text_polys, text_tags, crop_background=True)
+                im, text_polys, text_tags, selected_poly = \
+                    crop_area(im, text_polys, text_tags, crop_background=True)
                 if text_polys.shape[0] > 0:
                     # cannot find background
                     raise RuntimeError('cannot find background')
@@ -234,6 +319,12 @@ class SynthTextDataset(Dataset):
         print("LEN AFTER CUT", len(self.imageNames))
         self.bad_indices = []
 
+
+        N_SAMPLES = 80000
+
+        self.imageNames =  self.imageNames[:N_SAMPLES]
+        self.wordBBoxes = self.wordBBoxes[:N_SAMPLES]
+        self.transcripts = self.transcripts[:N_SAMPLES]
 
 
 
@@ -340,46 +431,55 @@ class SynthTextDataset(Dataset):
 
             # print rd_scale
             # random crop a area from image
-            # if np.random.rand() < background_ratio:
-            #     # crop background
-            #     im, text_polys, text_tags, _len_polys = crop_area(im, text_polys, text_tags, crop_background=True)
-            #     # if text_polys.shape[0] > 0:
-            #     #     # cannot find background
-            #     #     pass
-            #     # pad and resize image
-            #     new_h, new_w, _ = im.shape
-            #     max_h_w_i = np.max([new_h, new_w, input_size])
-            #     im_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
-            #     im_padded[:new_h, :new_w, :] = im.copy()
-            #     im = cv2.resize(im_padded, dsize=(input_size, input_size))
-            #     score_map = np.zeros((input_size, input_size), dtype=np.uint8)
-            #     geo_map_channels = 5
-            #     #                     geo_map_channels = 5 if FLAGS.geometry == 'RBOX' else 8
-            #     geo_map = np.zeros((input_size, input_size, geo_map_channels), dtype=np.float32)
-            #     training_mask = np.ones((input_size, input_size), dtype=np.uint8)
-            # else:
-
-            im, text_polys, text_tags, _len_polys = crop_area(im, text_polys, text_tags, crop_background=False)
-                # if text_polys.shape[0] == 0:
+            if np.random.rand() < background_ratio:
+                # crop background
+                im, text_polys, text_tags, _len_polys = crop_area(im, text_polys, text_tags, crop_background=True)
+                # if text_polys.shape[0] > 0:
+                #     # cannot find background
                 #     pass
-            h, w, _ = im.shape
+                # pad and resize image
+                h, w, _ = im.shape
 
                 # pad the image to the training input size or the longer side of image
-            new_h, new_w, _ = im.shape
-            max_h_w_i = np.max([new_h, new_w, input_size])
-            im_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
-            im_padded[:new_h, :new_w, :] = im.copy()
-            im = im_padded                # resize the image to input size
-            new_h, new_w, _ = im.shape
-            resize_h = input_size
-            resize_w = input_size
-            im = cv2.resize(im, dsize=(resize_w, resize_h))
-            resize_ratio_3_x = resize_w / float(new_w)
-            resize_ratio_3_y = resize_h / float(new_h)
-            text_polys[:, :, 0] *= resize_ratio_3_x
-            text_polys[:, :, 1] *= resize_ratio_3_y
-            new_h, new_w, _ = im.shape
-            score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
+                new_h, new_w, _ = im.shape
+                max_h_w_i = np.max([new_h, new_w, input_size])
+                im_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
+                im_padded[:new_h, :new_w, :] = im.copy()
+                im = im_padded  # resize the image to input size
+                new_h, new_w, _ = im.shape
+                resize_h = input_size
+                resize_w = input_size
+                im = cv2.resize(im, dsize=(resize_w, resize_h))
+                resize_ratio_3_x = resize_w / float(new_w)
+                resize_ratio_3_y = resize_h / float(new_h)
+                text_polys[:, :, 0] *= resize_ratio_3_x
+                text_polys[:, :, 1] *= resize_ratio_3_y
+                new_h, new_w, _ = im.shape
+                score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
+
+            else:
+
+                im, text_polys, text_tags, _len_polys = crop_area(im, text_polys, text_tags, crop_background=False)
+                    # if text_polys.shape[0] == 0:
+                    #     pass
+                h, w, _ = im.shape
+
+                    # pad the image to the training input size or the longer side of image
+                new_h, new_w, _ = im.shape
+                max_h_w_i = np.max([new_h, new_w, input_size])
+                im_padded = np.zeros((max_h_w_i, max_h_w_i, 3), dtype=np.uint8)
+                im_padded[:new_h, :new_w, :] = im.copy()
+                im = im_padded                # resize the image to input size
+                new_h, new_w, _ = im.shape
+                resize_h = input_size
+                resize_w = input_size
+                im = cv2.resize(im, dsize=(resize_w, resize_h))
+                resize_ratio_3_x = resize_w / float(new_w)
+                resize_ratio_3_y = resize_h / float(new_h)
+                text_polys[:, :, 0] *= resize_ratio_3_x
+                text_polys[:, :, 1] *= resize_ratio_3_y
+                new_h, new_w, _ = im.shape
+                score_map, geo_map, training_mask, rectangles = generate_rbox((new_h, new_w), text_polys, text_tags)
 
             # predict 出来的feature map 是 128 * 128， 所以 gt 需要取 /4 步长
             images = im[:, :, ::-1].astype(np.float32)  # bgr -> rgb

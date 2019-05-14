@@ -1,0 +1,52 @@
+
+{
+    "name": "FOTS",
+    "cuda": true,
+    "gpus": [0],
+    "data_loader": {
+        "dataset":"icdar2015",
+        "data_dir": "../datasets/ICDAR2015",
+        "batch_size": 32,
+        "shuffle": true,
+        "workers": 2
+    },
+    "validation": {
+        "validation_split": 0.1,
+        "shuffle": true
+    },
+
+    "lr_scheduler_type": "ExponentialLR",
+    "lr_scheduler_freq": 10000,
+    "lr_scheduler": {
+            "gamma": 0.94
+    },
+ 
+    "optimizer_type": "Adam",
+    "optimizer": {
+        "lr": 0.001,
+        "weight_decay": 1e-5
+    },
+    "loss": "FOTSLoss",
+    "metrics": ["fots_metric"],
+    "trainer": {
+        "epochs": 100,
+        "save_dir": "../Checkpoints/COLAB_Finetune_ICDAR_after_9_epoch_SynthText",
+        "save_freq": 10,
+        "verbosity": 2,
+        "monitor": "loss",
+        "monitor_mode": "min"
+    },
+    "arch": "FOTSModel",
+    "need_grad_backbone": true,
+    "need_grad_detector": true,
+    "model": {
+        "mode": "united",
+        "_mode": "detection",
+        "_mode":  "recognition",
+        "keys": "alphabet_and_number",
+        "crnn": {
+            "img_h":8,
+            "hidden": 256
+        }
+    }
+}

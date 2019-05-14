@@ -1,7 +1,7 @@
 {
     "name": "FOTS",
     "cuda": true,
-    "gpus": [5],
+    "gpus": [4],
     "finetune": "",
     "data_loader": {
         "dataset":"synth800k",
@@ -9,7 +9,7 @@
         "data_dir": "/data/ivpaharitonov/SynthText/SynthText/",
         "__data_dir": "/data/ivpaharitonov/",
         "_data_dir": "/Users/ivan_kharitonov/Google Drive/End2end_text_recognition_YSDA/datasets/SynthText/SynthText/",
-        "batch_size": 25,
+        "batch_size": 12,
         "shuffle": true,
         "workers": 8
     },

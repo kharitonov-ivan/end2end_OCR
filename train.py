@@ -17,7 +17,7 @@ from utils.bbox import Toolbox
 logging.basicConfig(level=logging.DEBUG, format='')
 
 
-def main(config, resume):
+def main(config, resume, config_from_file):
     train_logger = Logger()
 
     if config['data_loader']['dataset'] == 'icdar2015':
@@ -25,6 +25,13 @@ def main(config, resume):
         data_root = pathlib.Path(config['data_loader']['data_dir'])
         ICDARDataset2015 = ICDAR(data_root, year='2015')
         data_loader = OCRDataLoaderFactory(config, ICDARDataset2015)
+        train = data_loader.train()
+        val = data_loader.val()
+    elif config['data_loader']['dataset'] == 'icdar2017':
+        # ICDAR 2017
+        data_root = pathlib.Path(config['data_loader']['data_dir'])
+        ICDARDataset2017 = ICDAR(data_root, year='2017')
+        data_loader = OCRDataLoaderFactory(config, ICDARDataset2017)
         train = data_loader.train()
         val = data_loader.val()
     elif config['data_loader']['dataset'] == 'synth800k':
@@ -39,9 +46,8 @@ def main(config, resume):
         val = data_loader.val()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(i) for i in config['gpus']])
-    model = eval(config['arch'])(config)
+    model = eval(config['arch'])(config_from_file)
     model.summary()
-
 
     loss = eval(config['loss'])(config['model'])
     metrics = [eval(metric) for metric in config['metrics']]
@@ -56,7 +62,8 @@ def main(config, resume):
                       valid_data_loader=val,
                       train_logger=train_logger,
                       toolbox = Toolbox,
-                      keys=getattr(common_str,config['model']['keys']))
+                      keys=getattr(common_str,config['model']['keys']),
+                      config_from_file = config_from_file)
 
     trainer.train()
 
@@ -85,10 +92,22 @@ if __name__ == '__main__':
         if args.config is not None:
             logger.warning('Warning: --config overridden by --resume')
         config = torch.load(args.resume)['config']
+        config_from_file = json.load(open(args.config))
+        config['data_loader'] = config_from_file['data_loader']
+        config['trainer']=config_from_file['trainer']
+        config['validation'] = config_from_file['validation']
+        config['lr_scheduler_type'] = config_from_file['lr_scheduler_type']
+        config['lr_scheduler_freq'] = config_from_file['lr_scheduler_freq']
+        config['lr_scheduler'] = config_from_file['lr_scheduler']
+        config['optimizer_type'] = config_from_file['optimizer_type']
+        config['optimizer'] = config_from_file['optimizer']
+
     elif args.config is not None:
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
+        config_from_file = config
         #assert not os.path.exists(path), "Path {} already exists!".format(path)
     assert config is not None
 
-    main(config, args.resume)
+
+    main(config, args.resume, config_from_file)

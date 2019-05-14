@@ -73,9 +73,16 @@ class RecognitionLoss(nn.Module):
         target_lengths = torch.tensor(target_lengths).int().to(device)
         target_seq = torch.tensor(target_seq).int().to(device)
 
-        # ctc_loss(input, target, input_lengths, target_lengths)
-        loss = self.ctc_loss(input_seq, target_seq, input_lengths, target_lengths)
-        return loss
+
+        try:
+            # ctc_loss(input, target, input_lengths, target_lengths)
+            loss = self.ctc_loss(input_seq, target_seq, input_lengths, target_lengths)
+            return loss
+        except:
+            print("loss_error")
+            return torch.tensor(0.0)
+
+
 
 
 class FOTSLoss(nn.Module):

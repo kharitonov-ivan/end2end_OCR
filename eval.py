@@ -18,11 +18,10 @@ logging.basicConfig(level=logging.DEBUG, format='')
 
 def load_model(model_path, with_gpu):
     logger.info("Loading checkpoint: {} ...".format(model_path))
-    checkpoints = torch.load(model_path, map_location='cpu' )
+    checkpoints = torch.load(model_path)
     if not checkpoints:
         raise RuntimeError('No checkpoint found.')
     config = checkpoints['config']
-    config['need_grad_backbone'] = False
     state_dict = checkpoints['state_dict']
 
     model = FOTSModel(config)
@@ -68,17 +67,11 @@ def main(args: argparse.Namespace):
     with_image = True if output_img_dir else False
     with_gpu = True if torch.cuda.is_available() and not args.no_gpu else False
 
-    model = load_model(model_path, with_gpu)
-
-
-
-
-
-    if annotation_dir is  None:
+    model = load_model(model_path, with_gpu = False)
+    if annotation_dir is not None:
 
         true_pos, true_neg, false_pos, false_neg = [0] * 4
-        for image_fn in (image_dir.glob('*.jpg')):
-            print(image_fn)
+        for image_fn in tqdm(image_dir.glob('*.jpg')):
             gt_path = annotation_dir / image_fn.with_name('gt_{}'.format(image_fn.stem)).with_suffix('.txt').name
             labels = load_annotation(gt_path)
             # try:
@@ -100,10 +93,8 @@ def main(args: argparse.Namespace):
     else:
         with torch.no_grad():
             for image_fn in tqdm(image_dir.glob('*.jpg')):
-                print(image_fn)
                 Toolbox.predict(image_fn, model, with_image, output_img_dir, with_gpu, None, None,
-                                    strLabelConverter(getattr(common_str,args.keys)))
-
+                                strLabelConverter(getattr(common_str,args.keys)))
 
 
 if __name__ == '__main__':
@@ -111,26 +102,25 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Model eval')
     parser.add_argument('-m', '--model',
-                        default='../checkpoint-epoch001-loss-3.0105.pth.tar',
+                        default='./model_best.pth.tar',
                         type=pathlib.Path,
                         help='path to model')
-    parser.add_argument('-o', '--output_img_dir', default='./datasets/test_img_preds/',
-                        type=pathlib.Path,
+    parser.add_argument('-o', '--output_img_dir', type=pathlib.Path,
                         help='output dir for drawn images')
     parser.add_argument('-t', '--output_txt_dir', type=pathlib.Path,
                         help='output dir for drawn images')
-    parser.add_argument('-i', '--image_dir', default='./datasets/ch4_test_images',
+    parser.add_argument('-i', '--image_dir', default='/mnt/disk1/dataset/icdar2015/4.4/test/ch4_test_images',
                         type=pathlib.Path,
                         help='dir for input images')
-    parser.add_argument('-a', '--annotation_dir', default='./datasets/Challenge4_Test_Task4_GT',
+    parser.add_argument('-a', '--annotation_dir',
                         type=pathlib.Path,
                         help='dir for input images')
-    parser.add_argument('-k', '--keys', default='alphabet_and_number',
+    parser.add_argument('-k', '--keys',
                         type=str,
-                        help='keys in common_str')
-    parser.add_argument('--no_gpu', default=True,
+                        help='keys in common_str', default="alphabet_and_number")
+    parser.add_argument('--no_gpu',
                         action='store_true',
-                        help='keys in common_str')
+                        help='keys in common_str', default=True)
 
     args = parser.parse_args()
     main(args)

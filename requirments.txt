@@ -1,5 +1,5 @@
 tqdm
-torch
+torch==1.1.0
 torchvision
 numpy
 opencv-python==3.4.5.20
