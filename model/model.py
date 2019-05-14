@@ -7,11 +7,13 @@ from utils.bbox import Toolbox
 from .modules import shared_conv
 from .modules.roi_rotate import ROIRotate
 from .modules.crnn import CRNN
+from .modules.MORAN.morn import MORN
 import pretrainedmodels as pm
 import torch.optim as optim
 import numpy as np
 import utils.common_str as common_str
 from collections import OrderedDict
+
 
 
 class FOTSModel():
@@ -30,6 +32,9 @@ class FOTSModel():
         def backward_hook(self, grad_input, grad_output):
             for g in grad_input:
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
+
+        if self.config['rectifier'] == True:
+            self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
 
         if not self.mode == 'detection':
             self.conv_rec = shared_conv.SharedConv(backbone_network, config)
@@ -170,8 +175,9 @@ class FOTSModel():
                 feature_map_rec = self.conv_rec.forward(image)
                 rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
 
-                # if confif == 'moran':
-                #  rois, demo = self.MORN(rois, test, debug=debug)
+                # Raw rois.shape (batch size, 32, 16, width)
+                if self.config['rectifier'] == True:
+                    rois = self.MORN(rois, test=False, debug=False)
 
                 preds = self.recognizer(rois, lengths).permute(1, 0, 2)
                 lengths = torch.tensor(lengths).to(device)

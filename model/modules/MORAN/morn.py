@@ -38,6 +38,7 @@ class MORN(nn.Module):
         grid = torch.from_numpy(grid).type(self.inputDataType)
         if self.cuda:
             grid = grid.cuda()
+            self.cnn = self.cnn.cuda()
             
         self.grid = Variable(grid, requires_grad=False)
         self.grid_x = self.grid[:, :, :, 0].unsqueeze(3)
@@ -57,6 +58,7 @@ class MORN(nn.Module):
         grid_x = self.grid_x[:x.size(0)]
         grid_y = self.grid_y[:x.size(0)]
         x_small = nn.functional.upsample(x, size=(self.targetH, self.targetW), mode='bilinear')
+
 
         offsets = self.cnn(x_small)
         offsets_posi = nn.functional.relu(offsets, inplace=False)
