@@ -96,6 +96,11 @@ if __name__ == '__main__':
         config['data_loader'] = config_from_file['data_loader']
         config['trainer']=config_from_file['trainer']
         config['validation'] = config_from_file['validation']
+        config['lr_scheduler_type'] = config_from_file['lr_scheduler_type']
+        config['lr_scheduler_freq'] = config_from_file['lr_scheduler_freq']
+        config['lr_scheduler'] = config_from_file['lr_scheduler']
+        config['optimizer_type'] = config_from_file['optimizer_type']
+        config['optimizer'] = config_from_file['optimizer']
 
     elif args.config is not None:
         config = json.load(open(args.config))

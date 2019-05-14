@@ -108,7 +108,7 @@ class ICDAR(Dataset):
         image_paths = []
         for dir in self.imagesRoot:
             image_paths.extend(list(dir.glob('*.jpg')))
-
+        import time, re
         print("LOAD GT")
         # print(image_paths)
         for image in tqdm(image_paths):
@@ -116,15 +116,36 @@ class ICDAR(Dataset):
             with gt.open(mode='r') as f:
                 bboxes = []
                 texts = []
+
+
+                # for line in f:
+                #     text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip().split(',')
+                #     # if text[8] == 'Latin':
+                #     x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
+                #     bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                #     transcript = text[9]
+                #     bboxes.append(bbox)
+                #     texts.append(transcript)
+                #
+                #
+                # all_images.append(image)
+                # bboxes = np.array(bboxes)
+                # all_bboxs.append(bboxes)
+                # all_texts.append(texts)
+
+
                 for line in f:
                     text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip().split(',')
                     if text[8] == 'Latin':
                         x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
                         bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
                         transcript = text[9]
-                        # print(transcript)
-                        bboxes.append(bbox)
-                        texts.append(transcript)
+
+                        if re.match("^[A-Za-z0-9_-]*$", transcript):
+                            # print(transcript)
+                            # time.sleep(0.01)
+                            bboxes.append(bbox)
+                            texts.append(transcript)
                 if len(texts) > 0:
                     all_images.append(image)
                     bboxes = np.array(bboxes)
@@ -135,6 +156,9 @@ class ICDAR(Dataset):
         all_bboxs = all_bboxs[:N]
         all_texts = all_texts[:N]
         all_images = all_images[:N]
+        print(all_texts)
+
+
         return all_images, all_bboxs, all_texts
 
     def __loadGT(self):
@@ -203,7 +227,7 @@ class ICDAR(Dataset):
 
             # print rd_scale
             # random crop a area from image
-            if np.random.rand() < background_ratio:
+            if np.random.rand() < 0.15:#background_ratio:
                 # crop background
                 im, text_polys, text_tags, selected_poly = \
                     crop_area(im, text_polys, text_tags, crop_background=True)

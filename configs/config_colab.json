@@ -1,17 +1,14 @@
+
 {
     "name": "FOTS",
     "cuda": true,
-    "gpus": ["3"],
-    "finetune": "../saved/FOTS/checkpoint-epoch012-loss-2.5894.pth.tar",
+    "gpus": [0],
     "data_loader": {
-        "dataset":"icdar2017",
-        "_dataset":"icdar2015",
-        "data_dir": "/data/ivpaharitonov/ICDAR2017",
-        "_data_dir": "/data/ivpaharitonov/icdar2015/ICDAR2015/",
-        "-data_dir": "/Users/ivan_kharitonov/Google Drive/End2end_text_recognition_YSDA/datasets/SynthText/SynthText/",
-        "batch_size": 8,
+        "dataset":"icdar2015",
+        "data_dir": "../datasets/ICDAR2015",
+        "batch_size": 32,
         "shuffle": true,
-        "workers": 8
+        "workers": 2
     },
     "validation": {
         "validation_split": 0.1,
@@ -19,39 +16,37 @@
     },
 
     "lr_scheduler_type": "ExponentialLR",
-    "lr_scheduler_freq": 10,
+    "lr_scheduler_freq": 10000,
     "lr_scheduler": {
             "gamma": 0.94
     },
-
+ 
     "optimizer_type": "Adam",
     "optimizer": {
         "lr": 0.001,
         "weight_decay": 1e-5
     },
     "loss": "FOTSLoss",
-    "_metrics": ["detection_metric"],
     "metrics": ["fots_metric"],
     "trainer": {
-        "epochs": 100000,
-        "save_dir": "../saved_icdar_2017/",
-        "save_freq": 1,
+        "epochs": 100,
+        "save_dir": "../Checkpoints/COLAB_Finetune_ICDAR_after_9_epoch_SynthText",
+        "save_freq": 10,
         "verbosity": 2,
         "monitor": "loss",
         "monitor_mode": "min"
     },
     "arch": "FOTSModel",
-    "need_grad_backbone":false,
+    "need_grad_backbone": true,
     "need_grad_detector": true,
     "model": {
-        "get_weights_for": ["conv_det", "detector", "conv_rec"],
         "mode": "united",
         "_mode": "detection",
         "_mode":  "recognition",
         "keys": "alphabet_and_number",
         "crnn": {
-            "img_h":16,
-            "hidden": 1024
+            "img_h":8,
+            "hidden": 256
         }
     }
 }
