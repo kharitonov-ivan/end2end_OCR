@@ -166,8 +166,8 @@ class FOTSModel():
             feature_map_det = self.conv_det.forward(image)
             score_map, geo_map = self.detector(feature_map_det)
             if self.training:
-                # pred_boxes, pred_mapping = boxes, mapping
-                pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+                pred_boxes, pred_mapping = boxes, mapping
+                # pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
 
             else:
                 pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
