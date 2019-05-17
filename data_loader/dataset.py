@@ -319,12 +319,12 @@ class SynthTextDataset(Dataset):
         print("LEN AFTER CUT", len(self.imageNames))
         self.bad_indices = []
 
+        n_samples = 80000
+        random_indices = np.random.randint(0, len(self.imageNames), n_samples)
 
-        N_SAMPLES = 80000
-
-        self.imageNames =  self.imageNames[:N_SAMPLES]
-        self.wordBBoxes = self.wordBBoxes[:N_SAMPLES]
-        self.transcripts = self.transcripts[:N_SAMPLES]
+        self.imageNames =  self.imageNames[random_indices]
+        self.wordBBoxes = self.wordBBoxes[random_indices]
+        self.transcripts = self.transcripts[random_indices]
 
 
 
