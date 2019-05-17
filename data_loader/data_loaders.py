@@ -10,11 +10,11 @@ from .datautils import collate_fn
 
 class SynthTextDataLoaderFactory(BaseDataLoader):
 
-    def __init__(self, config):
+    def __init__(self, config, n_samples = None):
         super(SynthTextDataLoaderFactory, self).__init__(config)
         dataRoot = self.config['data_loader']['data_dir']
         self.workers = self.config['data_loader']['workers']
-        ds = SynthTextDataset(dataRoot)
+        ds = SynthTextDataset(dataRoot, n_samples = n_samples)
 
         self.__trainDataset, self.__valDataset = self.__train_val_split(ds)
 
