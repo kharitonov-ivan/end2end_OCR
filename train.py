@@ -38,6 +38,10 @@ def main(config, resume, config_from_file):
         data_loader = SynthTextDataLoaderFactory(config)
         train = data_loader.train()
         val = data_loader.val()
+    elif config['data_loader']['dataset'] == 'synth80k':
+        data_loader = SynthTextDataLoaderFactory(config, n_samples=80000)
+        train = data_loader.train()
+        val = data_loader.val()
     elif config['data_loader']['dataset'] == 'mydataset':
         image_root = pathlib.Path(config['data_loader']['image_dir'])
         annotation_dir = pathlib.Path(config['data_loader']['annotation_dir'])

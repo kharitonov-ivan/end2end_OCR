@@ -291,7 +291,7 @@ class ICDAR(Dataset):
 
 class SynthTextDataset(Dataset):
 
-    def __init__(self, data_root):
+    def __init__(self, data_root, n_samples):
         self.dataRoot = pathlib.Path(data_root)
         self.dataRoot_raw = data_root
         if not self.dataRoot.exists():
@@ -319,12 +319,12 @@ class SynthTextDataset(Dataset):
         print("LEN AFTER CUT", len(self.imageNames))
         self.bad_indices = []
 
+        self.n_samples = n_samples
+        random_indices = np.random.randint(0, len(self.imageNames), self.n_samples)
 
-        N_SAMPLES = 80000
-
-        self.imageNames =  self.imageNames[:N_SAMPLES]
-        self.wordBBoxes = self.wordBBoxes[:N_SAMPLES]
-        self.transcripts = self.transcripts[:N_SAMPLES]
+        self.imageNames =  self.imageNames[random_indices]
+        self.wordBBoxes = self.wordBBoxes[random_indices]
+        self.transcripts = self.transcripts[random_indices]
 
 
 
