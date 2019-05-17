@@ -40,6 +40,7 @@ def load_annotation(gt_path):
         label = dict()
         label["coor"] = list()
         label["ignore"] = list()
+        label["texts"] = list()  # !!!
         for line in f:
             text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip().split(',')
             x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, text[:8]))
@@ -47,6 +48,7 @@ def load_annotation(gt_path):
                 label["ignore"].append(True)
             else:
                 label["ignore"].append(False)
+            label["texts"].append(text[8])  # !!!
             bbox = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
             label["coor"].append(bbox)
     return label
@@ -67,20 +69,44 @@ def main(args: argparse.Namespace):
     with_image = True if output_img_dir else False
     with_gpu = True if torch.cuda.is_available() and not args.no_gpu else False
 
+    true_word_count = 0
+    total_words = 0
+    
     model = load_model(model_path, with_gpu = False)
     if annotation_dir is not None:
 
         true_pos, true_neg, false_pos, false_neg = [0] * 4
-        for image_fn in tqdm(image_dir.glob('*.jpg')):
+        image_true_word_count, image_word_count = 0, 0
+        for image_fn in tqdm(sorted(image_dir.glob('*.jpg'))):
+            print('-----------------------------------------------')
+            print('\nImage name:', image_fn)
+            print()
             gt_path = annotation_dir / image_fn.with_name('gt_{}'.format(image_fn.stem)).with_suffix('.txt').name
+            print('Annotation name:', gt_path)
+            print()
             labels = load_annotation(gt_path)
+            print(labels["texts"])  # !!!
+            print()
             # try:
             with torch.no_grad():
                 polys, im, res = Toolbox.predict(image_fn, model, with_image, output_img_dir, with_gpu, labels,
-                                                 output_txt_dir,strLabelConverter(getattr(common_str,args.keys)))
+                                                 output_txt_dir, strLabelConverter(getattr(common_str,args.keys)))
             true_pos += res[0]
             false_pos += res[1]
             false_neg += res[2]
+            image_true_word_count = res[3]
+            true_word_count += image_true_word_count
+            image_word_count = len([x for x in labels['texts'] if x != '###' and x != '*'])
+            total_words += image_word_count
+            
+            print('Image true word count:', image_true_word_count)
+            print('Image not ignored word count:', image_word_count)
+            print(
+                'Image word accuracy (for not ignored):', 
+                image_true_word_count / image_word_count if image_word_count else 'all ignored'
+            )
+            print()
+            
         if (true_pos + false_pos) > 0:
             precision = true_pos / (true_pos + false_pos)
         else:
@@ -89,7 +115,13 @@ def main(args: argparse.Namespace):
             recall = true_pos / (true_pos + false_neg)
         else:
             recall = 0
-        print("TP: %d, FP: %d, FN: %d, precision: %f, recall: %f" % (true_pos, false_pos, false_neg, precision, recall))
+        word_accuracy = true_word_count / total_words
+        print(
+            "TP: %d, FP: %d, FN: %d, precision: %f, recall: %f, word accuracy: %f" % (
+                true_pos, false_pos, false_neg, precision, recall, word_accuracy
+            )
+        )
+        
     else:
         with torch.no_grad():
             for image_fn in tqdm(image_dir.glob('*.jpg')):
