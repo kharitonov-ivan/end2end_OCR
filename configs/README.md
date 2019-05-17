@@ -1,21 +1,4 @@
-| Field | Function | Reference | Remarks | 
-| :---------------: | :---------- --------: | :----------------------: | :-------------- ------------------------------: | 
-| name | Project name | FOTS_2019-05-11_Own data | You are happy Just fine|
-| cuda | Whether to use graphics card | true | If you still use it | 
-| gpus | Configure multi-graphics parallel training | [0] | `nvidia-smi` Look at the id of the graphics card you want to use | 
-| finetune | finetune | " | Finetune's model must be the same as mode, or error | 
-| data_loader | Dataset configuration | See below for details | | 
-| validation | Validation set configuration | See below for details | | 
-| lr_scheduler_type | Learning rate scheduling type | ExponentialLR | Index, custom, you are happy | 
-| lr_scheduler_freq | Learning Rate Scheduling Frequency | 50 | Adjust yourself according to the convergence speed of the model |
-| lr_scheduler | Parameters of the learning rate scheduling function | | Self-propagating parameters according to the type of scheduler | 
-| optimizer_type | Optimizer type | Adam | Optimizer type supported by PyTorch | 
-| optimizer | Optimizer specific parameters | different parameter passing on their own | 
-| loss | loss function | FOTSLoss | currently only supports this loss | 
-| metrics | metric function | fots_metrics | recognition_metric and detection_metric do not realize | 
-| Trainer | trainer parameter | Detail View below | | 
-| Arch Algorithm Model | FOTSModel | Currently only FOTSModel |
-| model | FOTSModel's parameters | See below for details | ** will be updated very frequently ** | 
+
 
 ### Dataset configuration [data_loader] 
 
