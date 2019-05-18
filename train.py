@@ -57,6 +57,8 @@ def main(config, resume, config_from_file):
     metrics = [eval(metric) for metric in config['metrics']]
 
     finetune_model = config['finetune']
+    print(model.summary)
+
 
     trainer = Trainer(model, loss, metrics,
                       finetune=finetune_model,
@@ -68,6 +70,7 @@ def main(config, resume, config_from_file):
                       toolbox = Toolbox,
                       keys=getattr(common_str,config['model']['keys']),
                       config_from_file = config_from_file)
+    torch.save(model.state_dict(), "test2.chpk")
 
     trainer.train()
 
@@ -86,27 +89,29 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
     parser.add_argument('-c', '--config', default='./config.json', type=str,
                         help='config file path (default: None)')
-    parser.add_argument('-r', '--resume', default=None, type=str,
-                        help='path to latest checkpoint (default: None)')
+    # parser.add_argument('-r', '--resume', default=None, type=str,
+    #                     help='path to latest checkpoint (default: None)')
 
     args = parser.parse_args()
 
     config = None
-    if args.resume is not None:
-        if args.config is not None:
-            logger.warning('Warning: --config overridden by --resume')
-        config = torch.load(args.resume)['config']
-        config_from_file = json.load(open(args.config))
-        config['data_loader'] = config_from_file['data_loader']
-        config['trainer']=config_from_file['trainer']
-        config['validation'] = config_from_file['validation']
-        config['lr_scheduler_type'] = config_from_file['lr_scheduler_type']
-        config['lr_scheduler_freq'] = config_from_file['lr_scheduler_freq']
-        config['lr_scheduler'] = config_from_file['lr_scheduler']
-        config['optimizer_type'] = config_from_file['optimizer_type']
-        config['optimizer'] = config_from_file['optimizer']
+    args.resume = None
+    # if args.resume is not None:
+    #     if args.config is not None:
+    #         logger.warning('Warning: --config overridden by --resume')
+    #     config = torch.load(args.resume)['config']
+    #     config_from_file = json.load(open(args.config))
+    #     config['data_loader'] = config_from_file['data_loader']
+    #     config['trainer']=config_from_file['trainer']
+    #     config['validation'] = config_from_file['validation']
+    #     config['lr_scheduler_type'] = config_from_file['lr_scheduler_type']
+    #     config['lr_scheduler_freq'] = config_from_file['lr_scheduler_freq']
+    #     config['lr_scheduler'] = config_from_file['lr_scheduler']
+    #     config['optimizer_type'] = config_from_file['optimizer_type']
+    #     config['optimizer'] = config_from_file['optimizer']
 
-    elif args.config is not None:
+    if args.config is not None:
+
         config = json.load(open(args.config))
         path = os.path.join(config['trainer']['save_dir'], config['name'])
         config_from_file = config
