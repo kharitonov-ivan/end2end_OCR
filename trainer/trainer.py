@@ -30,10 +30,18 @@ class Trainer(BaseTrainer):
         self.log_step = int(np.sqrt(self.batch_size))
         self.toolbox = toolbox
         self.labelConverter = strLabelConverter(keys)
+        self.model = torch.nn.parallel.DataParallel(self.model)
+        print(self.model.parameters)
+        print(self.model.module.buffers)
+        self.model.buffers = self.model.module.buffers
+
+
+
 
     def _to_tensor(self, *tensors):
         t = []
         for __tensors in tensors:
+            print(self.device)
             t.append(__tensors.to(self.device))
         return t
 
@@ -59,6 +67,7 @@ class Trainer(BaseTrainer):
         """
         torch.cuda.empty_cache()
         self.model.train()
+
 
         total_loss = 0
         total_det_loss = 0
@@ -87,10 +96,10 @@ class Trainer(BaseTrainer):
                 img, score_map, geo_map, training_mask = self._to_tensor(img, score_map, geo_map, training_mask)
 
                 self.optimizer.zero_grad()
-                pred_score_map, pred_geo_map, pred_recog, pred_boxes, pred_mapping, indices = self.model.forward(img,
-                                                                                                                 boxes,
-                                                                                                                 mapping,
-                                                                                                                 transcripts)
+                pred_score_map, pred_geo_map, pred_recog, pred_boxes, pred_mapping, indices = self.model.forward(None,
+                                                                                                                 None,
+                                                                                                                 None)
+                                                                                                                 # transcripts)
                 if indices is not None:
                     # print(indices)
                     # print(transcripts)
@@ -114,7 +123,7 @@ class Trainer(BaseTrainer):
                                                recog,
                                                pred_recog,
                                                training_mask)
-                loss = det_loss + reg_loss
+                loss = det_loss + self.config['loss_coeff'] * reg_loss
                 loss.backward()
                 self.optimizer.step()
 
