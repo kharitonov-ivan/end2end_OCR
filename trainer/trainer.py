@@ -76,13 +76,15 @@ class Trainer(BaseTrainer):
             try:
                 image_paths, img, score_map, geo_map, training_mask, transcripts, boxes, mapping = gt
                 img, score_map, geo_map, training_mask = self._to_tensor(img, score_map, geo_map, training_mask)
-
+                # print("gt boxes and transcripts shapes: ", boxes.shape, transcripts.shape)
                 self.optimizer.zero_grad()
+                # print("mapping and boxes shape:", mapping.shape, boxes.shape, mapping, image_paths)
                 pred_score_map, pred_geo_map, pred_recog, pred_boxes, pred_mapping, indices = self.model.forward(img,
                                                                                                                  boxes,
                                                                                                                  mapping,
                                                                                                                  transcripts)
                 if indices is not None:
+                    # print("indices and pred_boxes and recog shapes: ", indices.shape, pred_boxes.shape, pred_recog[0].shape)
                     indice_transcripts = transcripts[indices]
                     pred_boxes = pred_boxes[indices]
                     pred_mapping = pred_mapping[indices]
@@ -90,7 +92,7 @@ class Trainer(BaseTrainer):
                     recog = (labels, label_lengths)
                 else:
                     recog = (None,None)
-
+                # print("score and pred_score maps shape: ", score_map.shape, pred_score_map.shape)
                 det_loss, reg_loss = self.loss(score_map,
                                                pred_score_map if pred_score_map is not None else score_map,
                                                geo_map,

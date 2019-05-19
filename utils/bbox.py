@@ -8,7 +8,7 @@ import torch
 
 # import locality_aware_nms as nms_locality
 from PIL import ImageDraw, Image, ImageFont
-
+from Levenshtein import distance
 from . import lanms
 
 
@@ -311,16 +311,22 @@ class Toolbox:
         return to_return
 
     @staticmethod
-    def predict(im_fn, model, with_img, output_dir, with_gpu, labels, output_txt_dir, label_converter,enable_correct=False):
+    def predict(im_fn, model, with_img, output_dir, with_gpu, labels, output_txt_dir, label_converter, enable_correct=False, save_text_preds=True):
         im = cv2.imread(im_fn.as_posix())[:, :, ::-1]
+#         print('Image shape:', im.shape)
+#         print()
         im_resized, (ratio_h, ratio_w) = Toolbox.resize_image(im)
         im_resized = im_resized.astype(np.float32)
         im_resized = torch.from_numpy(im_resized)
+#         print('Image resized shape:', im_resized.shape)
+#         print()
         if with_gpu:
             im_resized = im_resized.cuda()
 
         im_resized = im_resized.unsqueeze(0)
         im_resized = im_resized.permute(0, 3, 1, 2)
+#         print('Image new resized shape:', im_resized.shape)
+#         print()
 
         timer = {'net': 0, 'restore': 0, 'nms': 0}
         start = time.time()
@@ -357,27 +363,32 @@ class Toolbox:
                 if p_area > 0:
                     poly = poly[(0, 3, 2, 1), :]
 
-                polys.append(poly)
-                texts.append(m_pred_transcript)
+                polys.append(poly)  # ВЗЯТЬ ЭТИ БОКСЫ
+                texts.append(m_pred_transcript)  # ВЗЯТЬ ЭТИ ТЕКСТЫ
 
             if with_img:
                 font_file_path = os.path.join(os.path.dirname(__file__),"HanYiXiaoBoHuaYueYuan-Jian-2.ttf")
                 ttf_font = ImageFont.truetype(font_file_path, 20)
                 im = np.array(Toolbox.draw_annotation(Image.fromarray(im), polys, texts, ttf_font))
 
+        print('Predicted texts:', texts)
+        print()   
+                
         if output_txt_dir is not None:
             gt = output_txt_dir / im_fn.with_name('res_{}'.format(im_fn.stem)).with_suffix('.txt').name
 
             with gt.open(mode='a', encoding='utf-8') as f:
                 if boxes is not None:
-                    for m_box in boxes:
+                    for m_box, text in zip(boxes, texts):  # !!!
                         m_box = np.array(m_box, dtype=np.int32).reshape([1, 8])[0]
                         m_box = [str(x) for x in m_box]
+                        if save_text_preds:
+                            m_box += [text]  # !!!
                         bboxstr = ','.join(m_box) + '\n'
                         f.write(bboxstr)
         if labels is not None:
             if boxes is not None:
-                res = Toolbox.comp_gt_and_output(boxes, labels, 0.5)
+                res = Toolbox.comp_gt_and_output(zip(boxes, texts), labels, 0.5)  # !!!
             else:
                 res = (0, len(labels), 0)
         else:
@@ -438,14 +449,24 @@ class Toolbox:
         """
         coor = gt_labels["coor"]
         ignore = gt_labels["ignore"]
+        texts = gt_labels["texts"]
+        
         true_pos, true_neg, false_pos, false_neg = [0] * 4
-        for my_label in my_labels:
-            for gt_label in coor:
-                if Toolbox.cal_IOU(my_label, gt_label) > threshold:
+        true_word_count = 0
+        levenshtein_dist = 0
+        
+        for my_label_box, my_label_text in my_labels:
+            for gt_label_box, gt_label_text in zip(coor, texts):
+                if Toolbox.cal_IOU(my_label_box, gt_label_box) > threshold:
                     true_pos += 1
+                    if str.lower(my_label_text).strip() == str.lower(gt_label_text).strip():
+                        true_word_count += 1
+                    levenshtein_dist += (distance(str.lower(my_label_text), str.lower(gt_label_text)) /
+                        len(str.lower(gt_label_text)))
                     break
-            else:
-                false_pos += 1
+                else:
+                    false_pos += 1
+                    
         for i, gt_label in enumerate(coor):
             if ignore[i]:
                 continue
@@ -454,7 +475,9 @@ class Toolbox:
                     break
             else:
                 false_neg += 1
-        return true_pos, false_pos, false_neg
+                # one must count this in word accuracy too !!!
+         
+        return true_pos, false_pos, false_neg, true_word_count, levenshtein_dist
 
 
 if __name__ == "__main__":

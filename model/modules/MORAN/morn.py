@@ -38,6 +38,7 @@ class MORN(nn.Module):
         grid = torch.from_numpy(grid).type(self.inputDataType)
         if self.cuda:
             grid = grid.cuda()
+            self.cnn = self.cnn.cuda()
             
         self.grid = Variable(grid, requires_grad=False)
         self.grid_x = self.grid[:, :, :, 0].unsqueeze(3)

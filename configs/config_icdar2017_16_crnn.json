@@ -9,7 +9,7 @@
         "data_dir": "/data/ivpaharitonov/ICDAR2017",
         "_data_dir": "/data/ivpaharitonov/icdar2015/ICDAR2015/",
         "-data_dir": "/Users/ivan_kharitonov/Google Drive/End2end_text_recognition_YSDA/datasets/SynthText/SynthText/",
-        "batch_size": 16,
+        "batch_size": 8,
         "shuffle": true,
         "workers": 8
     },
@@ -19,7 +19,7 @@
     },
 
     "lr_scheduler_type": "ExponentialLR",
-    "lr_scheduler_freq": 50,
+    "lr_scheduler_freq": 10,
     "lr_scheduler": {
             "gamma": 0.94
     },

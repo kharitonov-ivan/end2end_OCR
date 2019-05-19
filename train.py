@@ -97,8 +97,10 @@ if __name__ == '__main__':
         config['trainer']=config_from_file['trainer']
         config['validation'] = config_from_file['validation']
 
-    elif args.config is not None:
+    if args.config is not None:
+        print("args config")
         config = json.load(open(args.config))
+        print(config)
         path = os.path.join(config['trainer']['save_dir'], config['name'])
         config_from_file = config
         #assert not os.path.exists(path), "Path {} already exists!".format(path)

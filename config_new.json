@@ -1,0 +1,65 @@
+{
+    "name": "FOTS",
+    "cuda": true,
+    "gpus": ["5"],
+    "finetune": "checkpoints/saved_icdar_2017/FOTS/checkpoint-epoch015-loss-1.9341.pth.tar",
+    "data_loader": {
+        "___dataset":"icdar2015",
+        "dataset":"icdar2017",
+        "_dataset":"synth80k",
+        "__data_dir": "/data/ivpaharitonov/SynthText/SynthText/",
+        "data_dir": "/data/ivpaharitonov/ocr_datasets/ICDAR2017/",
+        "_data_dir": "/data/ivpaharitonov/icdar2015/ICDAR2015/",
+        "-data_dir": "/Users/ivan_kharitonov/Google Drive/End2end_text_recognition_YSDA/datasets/SynthText/SynthText/",
+        "batch_size": 4,
+        "shuffle": true,
+        "workers": 8
+    },
+    "validation": {
+        "validation_split": 0.2,
+        "shuffle": true
+    },
+
+    "lr_scheduler_type": "ExponentialLR",
+    "lr_scheduler_freq": 3,
+    "lr_scheduler": {
+            "gamma": 0.94
+    },
+
+    "optimizer_type": "Adam",
+    "optimizer": {
+        "lr": 0.001,
+        "weight_decay": 1e-5
+    },
+    "loss": "FOTSLoss",
+    "_metrics": ["detection_metric"],
+    "metrics": ["fots_metric"],
+    "trainer": {
+        "epochs": 100000,
+        "save_dir": "./checkpoints/1-after_2017_unfreeze_resnet",
+        "save_freq": 10,
+        "verbosity": 2,
+        "monitor": "loss",
+        "monitor_mode": "min"
+    },
+    "arch": "FOTSModel",
+    "need_grad_backbone":true,
+    "need_grad_detector": true,
+    "roi_rotate": true,
+    "loss_coeff": 1e-3,
+    "rectifier": false,
+    "model": {
+        "gt_to_rec": true,
+        "get_weights_for": ["conv_det", "detector", "conv_rec", "recognizer"],
+
+        "mode": "united",
+        "_mode": "detection",
+        "_mode":  "recognition",
+
+        "keys": "alphabet_and_number",
+        "crnn": {
+            "img_h":16,
+            "hidden": 1024
+        }
+    }
+}
