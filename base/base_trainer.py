@@ -154,7 +154,10 @@ class BaseTrainer:
         }
         filename = os.path.join(self.checkpoint_dir, 'checkpoint-epoch{:03d}-loss-{:.4f}.pth.tar'
                                 .format(epoch, log['loss']))
-        torch.save(state, filename)
+        try:
+            torch.save(state, filename)
+        except:
+            pass
         if save_best:
             os.rename(filename, os.path.join(self.checkpoint_dir, 'model_best.pth.tar'))
             self.logger.info("Saving current best: {} ...".format('model_best.pth.tar'))

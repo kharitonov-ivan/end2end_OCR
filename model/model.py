@@ -16,10 +16,12 @@ import cv2
 from collections import OrderedDict
 
 
+
 class FOTSModel():
 
     def __init__(self, config):
         self.mode = config['model']['mode']
+
         if "rectifier" in config.keys():
             self.rectifier = config['rectifier']
         else:
@@ -29,6 +31,7 @@ class FOTSModel():
         else:
             self.roi_rotate = False
         self.height = config['model']['crnn']['img_h']
+
         assert self.mode.lower() in ['recognition', 'detection', 'united'], f'模式[{self.mode}]不支持'
         keys = getattr(common_str, config['model']['keys'])
         backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
@@ -41,8 +44,11 @@ class FOTSModel():
             for g in grad_input:
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
 
-        if self.rectifier == True:
+
+        if self.config.get('rectifier') is not None and self.config['rectifier'] == True:
             self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
+
+
         if not self.mode == 'detection':
             self.conv_rec = shared_conv.SharedConv(backbone_network, config)
             self.nclass = len(keys) + 1
@@ -58,11 +64,11 @@ class FOTSModel():
         self.buffers = OrderedDict
 
 
-        for param in self.detector.parameters():
-            try:
-                param.requires_grad =  config['need_grad_detector']
-            except:
-                param.requires_grad = True
+        # for param in self.detector.parameters():
+        #     try:
+        #         param.requires_grad = config['need_grad_detector']
+        #     except:
+        #         param.requires_grad = True
 
     def available_models(self):
         if self.mode == 'detection':
@@ -213,16 +219,21 @@ class FOTSModel():
             score_map, geo_map = self.detector(feature_map_det)
             if self.training:
                 pred_boxes, pred_mapping = boxes, mapping
+
                 # print("training shapes: ", boxes.shape, mapping.shape)
                 # pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
                 # print("pred shapes: ", pred_boxes.shape, pred_mapping.shape)
                 # raise Exception('printed boxes')
+                # pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+
+
             else:
                 pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
             '''if self.increase_bbox:
                 pred_boxes[:, :8] = pred_boxes + 2'''
             if len(pred_boxes) > 0:
                 feature_map_rec = self.conv_rec.forward(image)
+
                 if self.roi_rotate:
                     rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
                 else:
@@ -230,6 +241,7 @@ class FOTSModel():
                 # print("pred boxes shape: ", pred_boxes.shape)
                 if self.rectifier == True:
                     rois = self.MORN(rois, test=False, debug=False)
+
                 preds = self.recognizer(rois, lengths).permute(1, 0, 2)
                 lengths = torch.tensor(lengths).to(device)
             else:

@@ -30,10 +30,18 @@ class Trainer(BaseTrainer):
         self.log_step = int(np.sqrt(self.batch_size))
         self.toolbox = toolbox
         self.labelConverter = strLabelConverter(keys)
+        self.model = torch.nn.parallel.DataParallel(self.model)
+        print(self.model.parameters)
+        print(self.model.module.buffers)
+        self.model.buffers = self.model.module.buffers
+
+
+
 
     def _to_tensor(self, *tensors):
         t = []
         for __tensors in tensors:
+            print(self.device)
             t.append(__tensors.to(self.device))
         return t
 
@@ -57,7 +65,9 @@ class Trainer(BaseTrainer):
 
             The metrics in log must have the key 'metrics'.
         """
+        torch.cuda.empty_cache()
         self.model.train()
+
 
         total_loss = 0
         total_det_loss = 0
@@ -65,12 +75,20 @@ class Trainer(BaseTrainer):
         total_metrics = np.zeros(3)  # precious, recall, hmean
         dataset_size = len(self.data_loader)
 
-        if epoch % 2 ==0:
-            for param in self.model.detector.parameters():
-                param.requires_grad = True
-            else:
-                for param in self.model.detector.parameters():
-                    param.requires_grad = False
+        print('LR =', self.lr_scheduler.get_lr()[0])
+        # for param in self.model.recognizer.parameters():
+        #     param.requires_grad = False
+
+
+
+        # if epoch % 2 == 0:
+        #     print("detector freezed")
+        #     for param in self.model.detector.parameters():
+        #         param.requires_grad = False
+        # else:
+        #     print("detector unfreezed")
+        #     for param in self.model.detector.parameters():
+        #         param.requires_grad = True
 
         for batch_idx, gt in enumerate(self.data_loader):
             try:
@@ -78,6 +96,7 @@ class Trainer(BaseTrainer):
                 img, score_map, geo_map, training_mask = self._to_tensor(img, score_map, geo_map, training_mask)
                 # print("gt boxes and transcripts shapes: ", boxes.shape, transcripts.shape)
                 self.optimizer.zero_grad()
+
                 # print("mapping and boxes shape:", mapping.shape, boxes.shape, mapping, image_paths)
                 pred_score_map, pred_geo_map, pred_recog, pred_boxes, pred_mapping, indices = self.model.forward(img,
                                                                                                                  boxes,
@@ -88,6 +107,7 @@ class Trainer(BaseTrainer):
                     indice_transcripts = transcripts[indices]
                     pred_boxes = pred_boxes[indices]
                     pred_mapping = pred_mapping[indices]
+
                     labels, label_lengths = self.labelConverter.encode(indice_transcripts.tolist())
                     recog = (labels, label_lengths)
                 else:
@@ -100,7 +120,7 @@ class Trainer(BaseTrainer):
                                                recog,
                                                pred_recog,
                                                training_mask)
-                loss = det_loss + reg_loss
+                loss = det_loss + self.config['loss_coeff'] * reg_loss
                 loss.backward()
                 self.optimizer.step()
 
@@ -148,9 +168,9 @@ class Trainer(BaseTrainer):
             'hmean': total_metrics[2] / dataset_size
         }
 
-        if self.valid:
-            val_log = self._valid_epoch()
-            log = {**log, **val_log}
+        # if self.valid:
+        #     val_log = self._valid_epoch()
+        #     log = {**log, **val_log}
 
         return log
 

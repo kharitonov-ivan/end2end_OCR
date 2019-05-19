@@ -453,7 +453,9 @@ class Toolbox:
         
         true_pos, true_neg, false_pos, false_neg = [0] * 4
         true_word_count = 0
+
         levenshtein_dist = 0
+
         
         for my_label_box, my_label_text in my_labels:
             for gt_label_box, gt_label_text in zip(coor, texts):
@@ -461,8 +463,10 @@ class Toolbox:
                     true_pos += 1
                     if str.lower(my_label_text).strip() == str.lower(gt_label_text).strip():
                         true_word_count += 1
+
                     levenshtein_dist += (distance(str.lower(my_label_text), str.lower(gt_label_text)) /
                         len(str.lower(gt_label_text)))
+
                     break
                 else:
                     false_pos += 1
@@ -476,8 +480,10 @@ class Toolbox:
             else:
                 false_neg += 1
                 # one must count this in word accuracy too !!!
+
          
         return true_pos, false_pos, false_neg, true_word_count, levenshtein_dist
+
 
 
 if __name__ == "__main__":

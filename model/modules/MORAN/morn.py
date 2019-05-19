@@ -59,6 +59,7 @@ class MORN(nn.Module):
         grid_y = self.grid_y[:x.size(0)]
         x_small = nn.functional.upsample(x, size=(self.targetH, self.targetW), mode='bilinear')
 
+
         offsets = self.cnn(x_small)
         offsets_posi = nn.functional.relu(offsets, inplace=False)
         offsets_nega = nn.functional.relu(-offsets, inplace=False)

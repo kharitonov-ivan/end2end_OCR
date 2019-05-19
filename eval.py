@@ -71,12 +71,14 @@ def main(args: argparse.Namespace):
 
     true_word_count = 0
     total_words = 0
-    
-    model = load_model(model_path, with_gpu = False)
+
+    model = load_model(model_path, with_gpu=False)
     if annotation_dir is not None:
         print("start evaluation")
         true_pos, true_neg, false_pos, false_neg = [0] * 4
+
         image_true_word_count, image_word_count, levenshtein = 0, 0, 0
+
         for image_fn in tqdm(sorted(image_dir.glob('*.jpg'))):
             print('-----------------------------------------------')
             print('\nImage name:', image_fn)
@@ -90,34 +92,38 @@ def main(args: argparse.Namespace):
             # try:
             with torch.no_grad():
                 polys, im, res = Toolbox.predict(image_fn, model, with_image, output_img_dir, with_gpu, labels,
-                                                 output_txt_dir, strLabelConverter(getattr(common_str,args.keys)))
+                                                 output_txt_dir, strLabelConverter(getattr(common_str, args.keys)))
             true_pos += res[0]
             false_pos += res[1]
             false_neg += res[2]
             image_true_word_count = res[3]
+
             levenshtein_img = res[4]
             levenshtein += levenshtein_img
             print("res: ", res)
+
             true_word_count += image_true_word_count
             image_word_count = len([x for x in labels['texts'] if x != '###' and x != '*'])
             total_words += image_word_count
-            
+
             print('Image true word count:', image_true_word_count)
             print('Image not ignored word count:', image_word_count)
             print(
-                'Image word accuracy (for not ignored):', 
+                'Image word accuracy (for not ignored):',
                 image_true_word_count / image_word_count if image_word_count else 'all ignored'
             )
+
             print(
-                'Image word accuracy (only for true positive):', 
+                'Image word accuracy (only for true positive):',
                 image_true_word_count / res[0] if res[0] else 0
             )
             print(
-                'Percent of correct symbols:', 
+                'Percent of correct symbols:',
                 levenshtein_img / res[0] if res[0] else 0
             )
+
             print()
-            
+
         if (true_pos + false_pos) > 0:
             precision = true_pos / (true_pos + false_pos)
         else:
@@ -127,19 +133,19 @@ def main(args: argparse.Namespace):
         else:
             recall = 0
         word_accuracy = true_word_count / total_words
+
         word_accuracy_2 = true_word_count / true_pos
         levenshtein = levenshtein / true_pos
         print(
             "TP: %d, FP: %d, FN: %d, precision: %f, recall: %f, word accuracy: %f, new word accuracy(only fot tp): %f, percent of correct symbols: %f" % (
-                true_pos, false_pos, false_neg, precision, recall, word_accuracy, word_accuracy_2, levenshtein
+                true_pos, false_pos, false_neg, precision, recall, word_accuracy, word_accuracy_2, levenshtein)
             )
-        )
-        
+
     else:
         with torch.no_grad():
             for image_fn in tqdm(image_dir.glob('*.jpg')):
                 Toolbox.predict(image_fn, model, with_image, output_img_dir, with_gpu, None, None,
-                                strLabelConverter(getattr(common_str,args.keys)))
+                                strLabelConverter(getattr(common_str, args.keys)))
 
 
 if __name__ == '__main__':
