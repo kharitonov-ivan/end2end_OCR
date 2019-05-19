@@ -33,7 +33,7 @@ class FOTSModel():
             for g in grad_input:
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
 
-        if self.config['rectifier'] == True:
+        if self.config.get('rectifier') is not None and self.config['rectifier'] == True:
             self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
 
         if not self.mode == 'detection':
@@ -176,7 +176,7 @@ class FOTSModel():
                 rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
 
                 # Raw rois.shape (batch size, 32, 16, width)
-                if self.config['rectifier'] == True:
+                if self.config.get('rectifier') is not None and self.config['rectifier'] == True:
                     rois = self.MORN(rois, test=False, debug=False)
 
                 preds = self.recognizer(rois, lengths).permute(1, 0, 2)
