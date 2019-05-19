@@ -46,8 +46,8 @@ class FOTSModel():
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
 
 
-        # if self.config['rectifier'] is not None and self.config['rectifier'] == True:
-        #     self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
+        if self.config['rectifier'] is not None and self.config['rectifier'] == True:
+            self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
 
 
         if not self.mode == 'detection':

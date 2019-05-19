@@ -26,7 +26,7 @@ class BaseTrainer:
             if config['cuda']:
                 self.with_cuda = True
                 self.gpus = {i: item for i, item in enumerate(self.config['gpus'])}
-                device = 'cuda'
+                device = torch.device('cuda:'+self.gpus[0])
                 if torch.cuda.device_count() > 1 and len(self.gpus) > 1:
                     print('In parralell')
                     self.model = torch.nn.DataParallel(self.model)
@@ -39,11 +39,12 @@ class BaseTrainer:
                                 'training is performed on CPU.')
             self.with_cuda = False
             device = 'cpu'
-        #
-        # if finetune:
-        #     self._restore_checkpoint(finetune)
+
+        if finetune:
+            self._restore_checkpoint(finetune)
 
         self.device = torch.device(device)
+        print(self.device)
         self.model.to(self.device)
 
         self.logger.debug('Model is initialized.')
@@ -195,6 +196,7 @@ class BaseTrainer:
         print(self.config)
         weiths_list =  self.config['model']['get_weights_for']
         if weiths_list is not None:
+            print("Loading selected weights")
             self.model.load_state_dict(checkpoint['state_dict'], weiths_list)
         else:
             print("Please choose weights in config file")

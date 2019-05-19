@@ -1,15 +1,15 @@
 {
     "name": "FOTS",
-    "cuda": "cpu",
-    "gpus": ["7"],
-    "finetune": "",
+    "cuda": "cuda",
+    "gpus": ["1"],
+    "finetune": "../checkpoints/saved_icdar_2017_2015/FOTS/model_best.pth.tar",
     "data_loader": {
         "___dataset":"icdar2015",
-        "dataset":"icdar2015",
+        "dataset":"icdar2017",
         "_dataset":"synth80k",
         "__data_dir": "/data/ivpaharitonov/SynthText/SynthText/",
-        "_data_dir": "/data/ivpaharitonov/ocr_datasets/ICDAR2017/",
-        "data_dir": "/data/ivpaharitonov/ocr_datasets/ICDAR2015/",
+        "data_dir": "/data/ivpaharitonov/ocr_datasets/ICDAR2017/",
+        "_data_dir": "/data/ivpaharitonov/ocr_datasets/ICDAR2015/",
         "-data_dir": "/Users/ivan_kharitonov/Google Drive/End2end_text_recognition_YSDA/datasets/SynthText/SynthText/",
         "batch_size": 2,
         "shuffle": true,
@@ -28,7 +28,7 @@
 
     "optimizer_type": "Adam",
     "optimizer": {
-        "lr": 0.001,
+        "lr": 0.01,
         "weight_decay": 1e-5
     },
     "loss": "FOTSLoss",
@@ -36,8 +36,8 @@
     "metrics": ["fots_metric"],
     "trainer": {
         "epochs": 100000,
-        "save_dir": "./checkpoints/ICDAR2017_freeze_backone",
-        "save_freq": 1,
+        "save_dir": "../checkpoints/ICDAR2017_freeze_backbone/",
+        "save_freq": 5,
         "verbosity": 2,
         "monitor": "loss",
         "monitor_mode": "min"
@@ -46,7 +46,7 @@
     "need_grad_backbone":true,
     "need_grad_detector": true,
     "roi_rotate": true,
-    "loss_coeff": 1e-3,
+    "loss_coeff": 1e-2,
     "rectifier": false,
     "model": {
         "gt_to_rec": true,

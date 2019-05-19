@@ -1,6 +1,6 @@
 {
     "name": "FOTS",
-    "cuda": false,
+    "cuda": "cuda",
     "gpus": [0],
     "finetune": "",
     "data_loader": {

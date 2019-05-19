@@ -49,7 +49,7 @@ def main(config, resume):
         train = data_loader.train()
         val = data_loader.val()
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(i) for i in config['gpus']])
+    # os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(i) for i in config['gpus']])
     model = eval(config['arch'])(config)
     model.summary()
 
@@ -115,7 +115,6 @@ if __name__ == '__main__':
         config = json.load(open(args.config))
         print(config)
         path = os.path.join(config['trainer']['save_dir'], config['name'])
-        config_from_file = config
         #assert not os.path.exists(path), "Path {} already exists!".format(path)
     assert config is not None
 
