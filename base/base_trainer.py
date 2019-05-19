@@ -11,7 +11,7 @@ class BaseTrainer:
     """
     Base class for all trainers
     """
-    def __init__(self, model, loss, metrics,finetune,resume, config, train_logger=None, config_from_file = None):
+    def __init__(self, model, loss, metrics, finetune,resume, config, train_logger=None):
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
         self.model = model
@@ -21,7 +21,6 @@ class BaseTrainer:
         self.epochs = config['trainer']['epochs']
         self.save_freq = config['trainer']['save_freq']
         self.verbosity = config['trainer']['verbosity']
-        self.config_from_file = config_from_file
 
         if torch.cuda.is_available():
             if config['cuda']:
@@ -40,6 +39,9 @@ class BaseTrainer:
                                 'training is performed on CPU.')
             self.with_cuda = False
             device = 'cpu'
+        #
+        # if finetune:
+        #     self._restore_checkpoint(finetune)
 
         self.device = torch.device(device)
         self.model.to(self.device)
@@ -65,11 +67,8 @@ class BaseTrainer:
         ensure_dir(self.checkpoint_dir)
         json.dump(config, open(os.path.join(self.checkpoint_dir, 'config.json'), 'w'),
                   indent=4, sort_keys=False)
-        if resume:
-            self._resume_checkpoint(resume)
 
-        if finetune and not resume:
-            self._restore_checkpoint(finetune)
+
 
 
     def train(self):
@@ -193,12 +192,13 @@ class BaseTrainer:
         """
         self.logger.info("Loading checkpoint: {} ...".format(checkpoint_path))
         checkpoint = torch.load(checkpoint_path)
-        print(self.config_from_file)
-        weiths_list =  self.config_from_file['model']['get_weights_for']
+        print(self.config)
+        weiths_list =  self.config['model']['get_weights_for']
         if weiths_list is not None:
             self.model.load_state_dict(checkpoint['state_dict'], weiths_list)
         else:
-            self.model.load_state_dict(checkpoint['state_dict'])
+            print("Please choose weights in config file")
+            # self.model.load_state_dict(checkpoint['state_dict'])
         # self.optimizer.load_state_dict(checkpoint['optimizer'])
         # if self.with_cuda:
         #     for state in self.optimizer.state.values():

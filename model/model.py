@@ -21,6 +21,7 @@ class FOTSModel():
 
     def __init__(self, config):
         self.mode = config['model']['mode']
+        self.config = config
 
         if "rectifier" in config.keys():
             self.rectifier = config['rectifier']
@@ -45,8 +46,8 @@ class FOTSModel():
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
 
 
-        if self.config.get('rectifier') is not None and self.config['rectifier'] == True:
-            self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
+        # if self.config['rectifier'] is not None and self.config['rectifier'] == True:
+        #     self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
 
 
         if not self.mode == 'detection':
@@ -61,14 +62,8 @@ class FOTSModel():
             self.detector.register_backward_hook(backward_hook)
 
         self.roirotate = ROIRotate(config['model']['crnn']['img_h'])
-        self.buffers = OrderedDict
 
 
-        # for param in self.detector.parameters():
-        #     try:
-        #         param.requires_grad = config['need_grad_detector']
-        #     except:
-        #         param.requires_grad = True
 
     def available_models(self):
         if self.mode == 'detection':

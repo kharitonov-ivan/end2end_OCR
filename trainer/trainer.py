@@ -19,10 +19,9 @@ class Trainer(BaseTrainer):
     def __init__(self, model, loss, metrics,
                  finetune, resume, config,
                  data_loader, toolbox: Toolbox, valid_data_loader=None, train_logger=None,
-                 keys=custom_1, config_from_file=None):
-        super(Trainer, self).__init__(model, loss, metrics, finetune, resume, config, train_logger, config_from_file)
+                 keys=custom_1):
+        super(Trainer, self).__init__(model, loss, metrics, finetune, resume, config, train_logger)
         self.config = config
-        self.config_from_file = config_from_file
         self.batch_size = data_loader.batch_size
         self.data_loader = data_loader
         self.valid_data_loader = valid_data_loader
@@ -30,18 +29,10 @@ class Trainer(BaseTrainer):
         self.log_step = int(np.sqrt(self.batch_size))
         self.toolbox = toolbox
         self.labelConverter = strLabelConverter(keys)
-        self.model = torch.nn.parallel.DataParallel(self.model)
-        print(self.model.parameters)
-        print(self.model.module.buffers)
-        self.model.buffers = self.model.module.buffers
-
-
-
 
     def _to_tensor(self, *tensors):
         t = []
         for __tensors in tensors:
-            print(self.device)
             t.append(__tensors.to(self.device))
         return t
 
@@ -65,7 +56,6 @@ class Trainer(BaseTrainer):
 
             The metrics in log must have the key 'metrics'.
         """
-        torch.cuda.empty_cache()
         self.model.train()
 
 
@@ -120,6 +110,7 @@ class Trainer(BaseTrainer):
                                                recog,
                                                pred_recog,
                                                training_mask)
+
                 loss = det_loss + self.config['loss_coeff'] * reg_loss
                 loss.backward()
                 self.optimizer.step()
