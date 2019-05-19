@@ -12,6 +12,7 @@ import pretrainedmodels as pm
 import torch.optim as optim
 import numpy as np
 import utils.common_str as common_str
+import cv2
 from collections import OrderedDict
 
 
@@ -20,7 +21,17 @@ class FOTSModel():
 
     def __init__(self, config):
         self.mode = config['model']['mode']
-        self.config = config
+
+        if "rectifier" in config.keys():
+            self.rectifier = config['rectifier']
+        else:
+            self.rectifier = False
+        if "roi_rotate" in config.keys():
+            self.roi_rotate = config['roi_rotate']
+        else:
+            self.roi_rotate = False
+        self.height = config['model']['crnn']['img_h']
+
         assert self.mode.lower() in ['recognition', 'detection', 'united'], f'模式[{self.mode}]不支持'
         keys = getattr(common_str, config['model']['keys'])
         backbone_network = pm.__dict__['resnet50'](pretrained='imagenet')  # resnet50 in paper
@@ -33,8 +44,10 @@ class FOTSModel():
             for g in grad_input:
                 g[g != g] = 0  # replace all nan/inf in gradients to zero
 
+
         if self.config.get('rectifier') is not None and self.config['rectifier'] == True:
             self.MORN = MORN(nc = 32, targetH=config['model']['crnn']['img_h'], targetW=200)
+
 
         if not self.mode == 'detection':
             self.conv_rec = shared_conv.SharedConv(backbone_network, config)
@@ -110,6 +123,45 @@ class FOTSModel():
         for m_module in [getattr(self, m_module) for m_module in self.available_models()]:
             for m_para in m_module.parameters():
                 yield m_para
+                
+    def get_rectangles(self, feature_map, boxes, mapping):
+        rectangles_coords = []
+        boxes_widths = []
+        scale_size = int(512 // 128)
+        for box in boxes:
+            x1, y1, x2, y2, x3, y3, x4, y4 = box / scale_size  # 512 -> 128
+            min_x = np.min([x1, x2, x3, x4]); max_x = np.max([x1, x2, x3, x4])
+            boxes_widths.append(int(max_x - min_x))
+        max_width = np.max(np.array(boxes_widths))
+        crops = torch.zeros((boxes.shape[0], feature_map.shape[1], self.height, max_width),
+                           dtype=feature_map.dtype,
+                                            device=feature_map.device) # B * C * H * W
+        
+        box_idx = 0
+        for img_index, box in zip(mapping, boxes):
+            feature = feature_map[img_index]  # B * C * H * W
+            
+            x1, y1, x2, y2, x3, y3, x4, y4 = box / scale_size  # 512 -> 128
+            min_x = max(int(np.min([x1, x2, x3, x4])),0); max_x = min(int(np.max([x1, x2, x3, x4]))+1,feature_map.shape[3])
+            min_y = max(int(np.min([y1, y2, y3, y4])),0); max_y = min(int(np.max([y1, y2, y3, y4]))+1,feature_map.shape[2])
+            '''rectangle_coord = (min_x, min_y, max_x, min_y,
+                         max_x, max_y, min_x, max_y)
+            rectangles_coords.append(rectangle)'''
+            crops[box_idx,:, :, :boxes_widths[box_idx]] = (
+                torch.nn.functional.upsample(feature[None,:, min_y:max_y, min_x:max_x],
+                         size=(self.height,boxes_widths[box_idx]), mode='bilinear', align_corners=None)[0]
+            )
+            box_idx += 1
+            
+        # sort crops
+        lengths = np.array(boxes_widths)
+        indices = np.argsort(lengths)  # sort images by its width cause pack padded tensor needs it
+        indices = indices[::-1].copy()  # descending order
+        lengths = lengths[indices]
+        crops = crops[indices]
+        # print("cropped_images_padded and feature shape: ", crops.shape)
+        return crops, lengths, indices
+
 
     def forward(self, image, boxes=None, mapping=None, text=None):
         """
@@ -167,16 +219,27 @@ class FOTSModel():
             score_map, geo_map = self.detector(feature_map_det)
             if self.training:
                 pred_boxes, pred_mapping = boxes, mapping
+
+                # print("training shapes: ", boxes.shape, mapping.shape)
                 # pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+                # print("pred shapes: ", pred_boxes.shape, pred_mapping.shape)
+                # raise Exception('printed boxes')
+                # pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+
 
             else:
                 pred_boxes, pred_mapping = _compute_boxes(score_map, geo_map)
+            '''if self.increase_bbox:
+                pred_boxes[:, :8] = pred_boxes + 2'''
             if len(pred_boxes) > 0:
                 feature_map_rec = self.conv_rec.forward(image)
-                rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
 
-                # Raw rois.shape (batch size, 32, 16, width)
-                if self.config.get('rectifier') is not None and self.config['rectifier'] == True:
+                if self.roi_rotate:
+                    rois, lengths, indices = self.roirotate(feature_map_rec, pred_boxes[:, :8], pred_mapping)
+                else:
+                    rois, lengths, indices = self.get_rectangles(feature_map_rec, pred_boxes[:, :8], pred_mapping)
+                # print("pred boxes shape: ", pred_boxes.shape)
+                if self.rectifier == True:
                     rois = self.MORN(rois, test=False, debug=False)
 
                 preds = self.recognizer(rois, lengths).permute(1, 0, 2)

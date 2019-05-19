@@ -116,7 +116,7 @@ class ROIRotate(nn.Module):
         indices = indices[::-1].copy()  # descending order
         lengths = lengths[indices]
         cropped_images_padded = cropped_images_padded[indices]
-
+        # print("cropped_images_padded and feature shape: ", cropped_images_padded.shape, feature.shape)
         return cropped_images_padded, lengths, indices
 
     @staticmethod

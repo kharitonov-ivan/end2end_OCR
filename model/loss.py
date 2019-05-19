@@ -69,9 +69,10 @@ class RecognitionLoss(nn.Module):
         input_seq, target_seq, input_lengths, target_lengths = \
             pred[0], gt[0], pred[1], gt[1]
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        input_lengths =  torch.tensor(input_lengths).int().to(device)
-        target_lengths = torch.tensor(target_lengths).int().to(device)
-        target_seq = torch.tensor(target_seq).int().to(device)
+        input_seq = input_seq.cpu()
+        # input_lengths =  torch.tensor(input_lengths).int().to(device)
+        # target_lengths = torch.tensor(target_lengths).int().to(device)
+        # target_seq = torch.tensor(target_seq).int().to(device)
 
 
         try:

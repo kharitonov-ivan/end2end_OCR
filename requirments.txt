@@ -9,3 +9,4 @@ polygon3
 pretrainedmodels
 scipy
 Shapely
+python-Levenshtein

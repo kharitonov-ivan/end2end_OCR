@@ -95,6 +95,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = None
+
     args.resume = None
     # if args.resume is not None:
     #     if args.config is not None:
@@ -111,8 +112,8 @@ if __name__ == '__main__':
     #     config['optimizer'] = config_from_file['optimizer']
 
     if args.config is not None:
-
         config = json.load(open(args.config))
+        print(config)
         path = os.path.join(config['trainer']['save_dir'], config['name'])
         config_from_file = config
         #assert not os.path.exists(path), "Path {} already exists!".format(path)
